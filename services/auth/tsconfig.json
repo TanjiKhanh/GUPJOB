@@ -18,6 +18,6 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["main.ts", "src/**/*"],
+  "include": ["main.ts", "src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
