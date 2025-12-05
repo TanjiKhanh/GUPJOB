@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-
 import { PrismaService } from './src/prisma/prisma.service';
 import { AuthController } from './src/controllers/auth.controller';
 import { AuthService } from './src/services/auth.service';
@@ -13,7 +12,6 @@ import { UsersRepository } from './src/repositories/user.repository';
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'supersecret_dev_key',
-      // use a number of seconds for expiresIn to match type definitions
       signOptions: { expiresIn: 3600 },
     }),
   ],

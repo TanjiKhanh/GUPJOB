@@ -15,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<Landing />} />
       </Routes>
+      
     </BrowserRouter>
   </React.StrictMode>
 );

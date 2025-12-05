@@ -11,12 +11,12 @@
     "prisma:dbpush": "prisma db push"
   },
   "dependencies": {
-    "@nestjs/common": "^9.0.0",
-    "@nestjs/config": "^3.3.0",
-    "@nestjs/core": "^9.0.0",
-    "@nestjs/jwt": "^9.0.0",
-    "@nestjs/passport": "^9.0.0",
-    "@nestjs/platform-express": "^9.4.3",
+    "@nestjs/common": "^11.1.9",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.9",
+    "@nestjs/jwt": "^11.0.1",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.1.9",
     "@prisma/client": "^5.0.0",
     "bcrypt": "^5.1.0",
     "dotenv": "^16.0.0",
@@ -26,7 +26,7 @@
     "rxjs": "^7.8.0"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^18.19.130",
     "@types/passport-jwt": "^3.0.6",
     "prisma": "^5.22.0",
     "ts-node-dev": "^2.0.0",

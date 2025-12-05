@@ -1,13 +1,15 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  // This reads the PORT from your .env file, or uses 3000 as a fallback
   const port = process.env.PORT || 3000;
-  
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  console.log(`Auth service running on: http://localhost:${port}`);
 }
-bootstrap();
+
+bootstrap().catch(err => {
+  console.error('Failed to start:', err);
+  process.exit(1);
+});
