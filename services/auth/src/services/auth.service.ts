@@ -67,13 +67,16 @@ export class AuthService {
     const matched = await bcrypt.compare(dto.password, user.password);
     if (!matched) throw new UnauthorizedException('Invalid credentials');
 
+    // create access tokens
     const accessToken = this.createAccessToken(user);
+    // create and store refresh token store in cookie or client storage
     const { refreshToken, expiresAt } = await this.createAndStoreRefreshToken(user.id, userAgent, ip);
-
+    // return tokens
     const safe = { id: user.id, email: user.email, name: user.name, role: user.role };
     return { access_token: accessToken, refresh_token: refreshToken, refresh_expires_at: expiresAt, user: safe };
   }
 
+  
   // validate and rotate refresh token - returns new access token and optionally new refresh token
   async refreshToken(plainToken: string, userAgent?: string, ip?: string) {
     if (!plainToken) throw new UnauthorizedException('Missing refresh token');
