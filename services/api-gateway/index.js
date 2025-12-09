@@ -26,6 +26,7 @@ app.use((req, res, next) => {
   }
 
   // Check Token for everything else
+    //Ensure the user has a "Key Card" (Access Token).
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.log(`Blocked unauthorized request: ${req.path}`);
