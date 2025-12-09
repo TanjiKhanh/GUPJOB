@@ -40,14 +40,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const resp = await api.post('/auth/login', { email, password });
-    const { access_token, user } = resp.data;
+    
+    // FIX: Check if the response is wrapped in a 'data' property
+    // If your interceptor wraps it, use resp.data.data. 
+    // If not, fall back to resp.data.
+    const payload = resp.data.data ; 
+
+    const { access_token, user } = payload;
+    
+    // Safety check to see if it worked this time
+    if (!user) {
+        console.error("Still undefined! Full response was:", resp.data);
+        return;
+    }
+
     setAccessToken(access_token);
     setUser(user);
   };
 
   const refresh = async () => {
-    const resp = await api.post('/auth/refresh', {}); // cookie sent automatically
-    const { access_token, user } = resp.data;
+    const resp = await api.post('/auth/refresh', {}); 
+    
+    const payload = resp.data.data;
+    
+    const { access_token, user } = payload;
     setAccessToken(access_token);
     setUser(user);
   };

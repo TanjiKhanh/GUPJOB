@@ -26,6 +26,7 @@ export class AuthController {
     const userAgent = req.get('user-agent') || '';
     const ip = req.ip;
     const result = await this.authService.login(dto, userAgent, ip);
+
     // set refresh cookie; HttpOnly so JS can't read it
     res.cookie(REFRESH_COOKIE, result.refresh_token, {
       httpOnly: true,

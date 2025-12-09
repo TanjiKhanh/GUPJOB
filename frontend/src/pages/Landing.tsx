@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../styles/styles.css';
 
@@ -19,8 +18,17 @@ import iconCohort from '../assets/images/icon-cohort-tracking.png';
 export default function Landing() {
   return (
     <div>
-      {/* Use the shared Header component so header style/behavior is consistent */}
-      <Header />
+      <header className="site-header container">
+        <div className="brand">
+          <Link to="/"><img src={logo} alt="GUPJOB" className="brand-logo" /></Link>
+        </div>
+        <nav className="site-nav">
+          <Link to="/features">Features</Link>
+          <Link to="/how-it-works">How it Works</Link>
+          <Link to="/companies">For Companies</Link>
+          <Link to="/login" className="btn btn--ghost">Sign in</Link>
+        </nav>
+      </header>
 
       <main>
         {/* Hero Section */}

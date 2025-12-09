@@ -1,50 +1,87 @@
+require('dotenv').config();
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-app.use(express.json());
 
-const AUTH_SERVICE = process.env.AUTH_SERVICE_URL || 'http://auth:3000';
+const AUTH_SERVICE = process.env.AUTH_SERVICE_URL || 'http://localhost:3000';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_dev_key';
 
-// public routes that don't need token check
 const PUBLIC_PREFIXES = ['/api/auth', '/health'];
 
-// simple middleware: validate JWT for routes not public, and attach x-user-* headers
-app.use('/api', (req, res, next) => {
-  // If route is public, skip verification
-  if (PUBLIC_PREFIXES.some(p => req.path.startsWith(p))) {
+console.log(`Gateway proxying /api/auth -> ${AUTH_SERVICE}/auth`);
+
+// --- 1. Global Auth Middleware (Fixed) ---
+app.use((req, res, next) => {
+  // Only protect routes starting with /api
+  if (!req.path.startsWith('/api')) {
     return next();
   }
 
-  // Expect Authorization header: Bearer <token>
-  const auth = req.headers['authorization'];
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Unauthorized' });
+  // Skip verification for Login/Register (The Fix!)
+  if (PUBLIC_PREFIXES.some(prefix => req.path.startsWith(prefix))) {
+    console.log(`Public route accessed: ${req.path}`);
+    return next();
   }
-  const token = auth.split(' ')[1];
+
+  // Check Token for everything else
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log(`Blocked unauthorized request: ${req.path}`);
+    return res.status(401).json({ message: 'Unauthorized: No token provided' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    // Attach minimal headers for downstream services if they trust the gateway:
     req.headers['x-user-id'] = String(payload.sub || payload.userId || payload.id || '');
     req.headers['x-user-email'] = payload.email || '';
     req.headers['x-user-role'] = payload.role || '';
-    // also attach req.user for any gateway handlers
-    req.user = payload;
     next();
   } catch (err) {
-    console.error('JWT verify failed', err?.message);
-    return res.status(401).json({ message: 'Invalid token' });
+    return res.status(401).json({ message: 'Unauthorized: Invalid token' });
   }
 });
 
-// Proxy rules
-app.use('/api/auth', createProxyMiddleware({ target: AUTH_SERVICE, changeOrigin: true, pathRewrite: {'^/api/auth': '/auth'} }));
-app.use('/api/user', createProxyMiddleware({ target: AUTH_SERVICE, changeOrigin: true, pathRewrite: {'^/api/user': '/user'} }));
+// --- 2. Proxy Rules ---
 
-// Fallback for other paths to avoid 404 for SPA (optional)
-app.get('/', (req, res) => res.send('API Gateway is running'));
+// Auth Service Proxy
+app.use(
+  '/api/auth',
+  createProxyMiddleware({
+    target: AUTH_SERVICE,
+    changeOrigin: true,
+    pathRewrite: {
+      '^/api/auth': '/auth' // Rewrites /api/auth/login -> /auth/login
+    },
+    onError: (err, req, res) => {
+      console.error('Proxy Error (Auth):', err.message);
+      res.status(500).json({ message: 'Gateway Error: Could not connect to Auth Service' });
+    },
+  })
+);
+
+// User Service Proxy (Assuming it shares the same backend for now)
+app.use(
+  '/api/user',
+  createProxyMiddleware({
+    target: AUTH_SERVICE,
+    changeOrigin: true,
+    pathRewrite: {
+      '^/api/user': '/user' // Rewrites /api/user/profile -> /user/profile
+    },
+    onError: (err, req, res) => {
+      console.error('Proxy Error (User):', err.message);
+      res.status(500).json({ message: 'Gateway Error: Could not connect to User Service' });  
+    },
+  })
+);
+
+app.get('/', (req, res) => res.send('API Gateway Running'));
 
 const port = process.env.PORT || 8080;
-app.listen(port, () => console.log(`API Gateway listening on ${port}`));
+app.listen(port, () => {
+  console.log(`API Gateway listening on http://localhost:${port}`);
+});
