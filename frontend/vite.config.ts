@@ -1,18 +1,32 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Dev server proxy: forward /api -> gateway (http://localhost:8080)
-// This keeps browser origin as the frontend dev server while proxying API calls.
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
+      '/auth': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      // 👇 FIX THIS BLOCK
+      '/admin': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        // Bypass proxy if the request is for an HTML page (Browser Navigation)
+        bypass: (req, res, options) => {
+          if (req.headers.accept && req.headers.accept.includes('text/html')) {
+            return req.url;
+          }
+        },
+      },
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
-        // don't rewrite path; gateway expects /api/*
       },
     },
   },

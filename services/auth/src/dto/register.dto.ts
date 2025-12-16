@@ -11,6 +11,6 @@ export class RegisterDto {
   @IsString( {message: 'Name must be a string'})
   name?: string;
 
-  @IsIn(['LEARNER', 'MENTOR', 'COMPANY', 'ADMIN'] , {message: 'Role must be one of LEARNER, MENTOR, COMPANY, ADMIN'})
+  @IsIn(['STUDENT', 'MENTOR', 'COMPANY', 'ADMIN'] , {message: 'Role must be one of STUDENT, MENTOR, COMPANY, ADMIN'})
   role?: string;
 }

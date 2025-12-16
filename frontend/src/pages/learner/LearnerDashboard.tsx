@@ -1,5 +1,6 @@
 import React from 'react';
-import MainLayout from '../../layouts/MainLayout';
+import MainLayout from '../../components/layouts/MainLayout';
+import logo from '../../assets/images/logo-gupjob-primary.png';
 
 export default function LearnerDashboard() {
   return (

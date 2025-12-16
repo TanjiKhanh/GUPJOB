@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",   // 👈 Points to 'services/auth/'
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "types": ["node"],
+
+    // 👇 1. Path Mapping
+    "paths": {
+      // Go up 2 levels to root (../../), then into libs/shared-db
+      "@libs/database": ["../../libs/shared-db/src/index.ts"],
+      "@libs/database/*": ["../../libs/shared-db/src/*"]
+    }
+  },
+  // 👇 2. Include the library files so TypeScript compiles them
+  "include": [
+    "src/**/*", 
+    "test/**/*", 
+    "../../libs/shared-db/src/**/*" 
+  ],
+  "exclude": ["node_modules", "dist"]
+}

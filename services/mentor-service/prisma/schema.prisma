@@ -1,0 +1,42 @@
+// Mentor service schema (mentor-service)
+// Models: Mentor, MentorSkill, MentorAvailability (simple)
+// Datasource uses MENTOR_DATABASE_URL
+
+datasource db {
+  provider = "postgresql"
+  url      = env("MENTOR_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Mentor {
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String    @unique
+  // departmentSlug ties to admin-service Department.slug (no DB relation)
+  departmentSlug String?  
+  bio            String?
+  rating         Float?    @default(0)
+  skills         Json?     // array of skill tags e.g. ["frontend","react"]
+  hourlyRate     Float?    
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  availabilities MentorAvailability[]
+}
+
+model MentorAvailability {
+  id         Int     @id @default(autoincrement())
+  mentorId   Int
+  mentor     Mentor  @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  weekday    Int     // 0-6
+  startTime  String  // "09:00"
+  endTime    String  // "17:00"
+  timezone   String?
+  createdAt  DateTime @default(now())
+
+  @@index([mentorId])
+}

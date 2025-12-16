@@ -1,0 +1,84 @@
+// User service schema (user-service)
+// Models: UserRoadmap (per-user instance), UserRoadmapNode, VerificationSubmission
+// Note: userId is stored as Int (no foreign relation to auth service DB).
+// Datasource uses USER_DATABASE_URL
+
+datasource db {
+  provider = "postgresql"
+  url      = env("USER_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RoadmapNodeStatus {
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
+  VERIFIED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model UserRoadmap {
+  id              Int                 @id @default(autoincrement())
+  userId          Int                 // references user in auth-service (by id)
+  masterRoadmapId Int?                // id of master roadmap in admin-service (stored for traceability)
+  title           String
+  slug            String?
+  structure       Json?               // user-customized layout/coords
+  nodes           UserRoadmapNode[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([masterRoadmapId])
+  @@unique([userId, masterRoadmapId])
+}
+
+model UserRoadmapNode {
+  id                   Int                @id @default(autoincrement())
+  userRoadmapId        Int
+  userRoadmap          UserRoadmap        @relation(fields: [userRoadmapId], references: [id], onDelete: Cascade)
+  nodeKey              String
+  title                String?
+  status               RoadmapNodeStatus  @default(LOCKED)
+  startedAt            DateTime?
+  completedAt          DateTime?
+  verifiedAt           DateTime?
+  verifierId           Int?               // mentor id from mentor-service (by id)
+  positionOverride     Json?
+  userNotesMd          String?
+  verificationRequired Boolean             @default(false)
+  submissions          VerificationSubmission[] @relation("nodeSubmissions")
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@unique([userRoadmapId, nodeKey])
+  @@index([userRoadmapId])
+  @@index([verifierId])
+  @@index([status])
+}
+
+model VerificationSubmission {
+  id                    Int       @id @default(autoincrement())
+  userRoadmapNodeId     Int
+  userRoadmapNode       UserRoadmapNode @relation(fields: [userRoadmapNodeId], references: [id], onDelete: Cascade, name: "nodeSubmissions")
+  submitterId           Int       // user id (from auth-service)
+  description           String?
+  evidence              Json?     // links, repo meta, attachments metadata
+  status                SubmissionStatus @default(PENDING)
+  reviewerId            Int?      // mentor id from mentor-service
+  reviewerComment       String?
+  createdAt             DateTime  @default(now())
+  reviewedAt            DateTime?
+
+  @@index([status])
+  @@index([submitterId])
+  @@index([reviewerId])
+}

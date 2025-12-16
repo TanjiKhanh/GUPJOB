@@ -1,87 +1,90 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import api from '../api/axios';
+import React, { useState, useEffect, ReactNode } from 'react';
+import api from '../services/api';
 import { setAccessToken, getAccessToken } from './tokenStore';
-
-type User = { id: number; email: string; role: string } | null;
-
-type AuthContextType = {
-  user: User;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  accessToken: string | null;
-  refresh: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-}
+import { AuthContext, User } from './AuthContext'; 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, attempt a refresh to restore session (optional)
+  // 1. Check session on mount
   useEffect(() => {
-    (async () => {
+    const initAuth = async () => {
       try {
-        await refresh();
-      } catch {
-        // no session
+        const token = getAccessToken();
+        if (token) {
+          await refresh(); 
+        }
+      } catch (err) {
+        // If refresh fails (401), api.ts redirects to login automatically
+        // We just clear local state here to be safe
+        console.log("Session init failed", err);
+        setAccessToken(null); 
+        setUser(null);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+    initAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 2. Login Function
   const login = async (email: string, password: string) => {
-    const resp = await api.post('/auth/login', { email, password });
-    
-    // FIX: Check if the response is wrapped in a 'data' property
-    // If your interceptor wraps it, use resp.data.data. 
-    // If not, fall back to resp.data.
-    const payload = resp.data.data ; 
+    // We cast 'as any' because api.ts interceptor returns raw data, not AxiosResponse
+    const payload = await api.post('/auth/login', { email, password }) as any;
 
-    const { access_token, user } = payload;
-    
-    // Safety check to see if it worked this time
-    if (!user) {
-        console.error("Still undefined! Full response was:", resp.data);
-        return;
+    if (!payload?.access_token) {
+      throw new Error('Login failed: No access token received.');
     }
 
-    setAccessToken(access_token);
-    setUser(user);
+    setAccessToken(payload.access_token);
+    setUser(payload.user);
+
+    return payload.user;
   };
 
+  // 3. Refresh Function
   const refresh = async () => {
-    const resp = await api.post('/auth/refresh', {}); 
-    
-    const payload = resp.data.data;
-    
-    const { access_token, user } = payload;
-    setAccessToken(access_token);
-    setUser(user);
+    // This call will fail if the HttpOnly cookie is missing/expired
+    const payload = await api.post('/auth/refresh', {}) as any;
+
+    if (!payload?.access_token) {
+      throw new Error('Refresh failed: No access token returned.');
+    }
+
+    setAccessToken(payload.access_token);
+
+    if (payload.user) {
+      setUser(payload.user);
+    }
   };
 
+  // 4. Logout Function
   const logout = async () => {
     try {
       await api.post('/auth/logout');
+    } catch (err) {
+      console.warn('Logout failed on server', err);
     } finally {
       setAccessToken(null);
       setUser(null);
+      window.location.href = '/login'; 
     }
   };
 
-  // expose context
+  const value = {
+    user,
+    login,
+    logout,
+    refresh,
+    accessToken: getAccessToken(),
+    loading
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, accessToken: getAccessToken(), refresh }}>
-      {/* optionally render a loading state while restoring session */}
-      {!loading ? children : <div>Loading...</div>}
+    <AuthContext.Provider value={value}>
+      {!loading ? children : <div className="auth-loading">Loading session...</div>}
     </AuthContext.Provider>
   );
 };
