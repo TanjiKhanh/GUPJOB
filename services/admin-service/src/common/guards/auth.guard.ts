@@ -1,42 +1,56 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import * as jwt from 'jsonwebtoken';
 import { Request } from 'express';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator'; // 👈 Make sure this path is correct
 
-/**
- * Simple JWT guard that:
- * - reads Authorization: Bearer <token>
- * - verifies with process.env.JWT_SECRET
- * - attaches decoded payload to request.user
- *
- * Note: In production you should use Passport strategies (e.g., @nestjs/passport + passport-jwt)
- * or your existing auth middleware. This guard is intentionally small and framework-agnostic for the
- * example project.
- */
 @Injectable()
 export class AuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const req = context.switchToHttp().getRequest<Request>();
-    const auth = req.headers['authorization'];
-    if (!auth) throw new UnauthorizedException('Missing Authorization header');
+  constructor(private reflector: Reflector) {}
 
-    const parts = auth.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      throw new UnauthorizedException('Invalid Authorization header format');
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    // 1. 🔓 CHECK FOR PUBLIC FIRST
+    // If the route is marked @Public(), we skip token validation.
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      console.log('🔓 Public route accessed, skipping auth check');
+      return true; // ✅ Allow access without token
     }
 
-    const token = parts[1];
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new UnauthorizedException('JWT secret not configured');
+    // 2. 🔒 STANDARD TOKEN CHECK
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = this.extractTokenFromHeader(request);
+
+    if (!token) {
+      throw new UnauthorizedException('Missing Authorization header');
     }
 
     try {
-      const payload = jwt.verify(token, secret) as any;
-      // attach user payload to request
-      (req as any).user = payload;
-      return true;
-    } catch (err) {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) throw new Error('JWT_SECRET is not defined');
+
+      const payload = jwt.verify(token, secret);
+      
+      // 📝 Attach user to request so RolesGuard can read it later
+      request['user'] = payload;
+    } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
+
+    return true;
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }

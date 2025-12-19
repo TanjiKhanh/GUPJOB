@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Pages - Public
 import Landing from './pages/public/Landing';
@@ -8,13 +8,15 @@ import Register from './pages/public/Register';
 
 // Pages - Learner
 import LearnerDashboard from './pages/learner/LearnerDashboard';
+import MyCourses from './pages/learner/MyCourse';
+import RoadmapDetail from './pages/learner/RoadmapDetail';
 
 // Pages - Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageCourses from './pages/admin/ManageCourses';
 import ManageDepartments from './pages/admin/ManageDepartments';
-import ManageRoadmaps from './pages/admin/ManageRoadmap'; // 👈 Import List View
-import RoadmapDesigner from './pages/admin/RoadmapDesign'; // 👈 Import Visual Editor
+import ManageRoadmaps from './pages/admin/ManageRoadmap';
+import RoadmapDesigner from './pages/admin/RoadmapDesign';
 
 // Auth Components
 import { AuthProvider } from './auth/AuthProvider';
@@ -22,13 +24,18 @@ import RequireAuth from './auth/RequireAuth';
 import PublicOnly from './auth/PublicOnly';
 import RequireRole from './auth/RequireRole';
 
-// Layout
-import AdminLayout from './components/layouts/AdminLayout';
+// Layouts
+import MainLayout from './components/layouts/MainLayout'; 
 
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <main style={{ minHeight: '100vh' }}>
           <Routes>
             {/* =========================================
@@ -38,39 +45,67 @@ export default function App() {
             
             <Route 
               path="/login" 
-              element={
-                <PublicOnly>
-                  <Login />
-                </PublicOnly>
-              } 
+              element={<PublicOnly><Login /></PublicOnly>} 
             />
             <Route 
               path="/register" 
-              element={
-                <PublicOnly>
-                  <Register />
-                </PublicOnly>
-              } 
+              element={<PublicOnly><Register /></PublicOnly>} 
             />
 
             {/* =========================================
-                2. LEARNER ROUTES (Protected)
+                2. LEARNER DASHBOARD (With Sidebar Layout)
                ========================================= */}
             <Route
-              path="/dashboard/*"
+              path="/dashboard"
               element={
                 <RequireAuth>
                   <RequireRole allowedRoles={['STUDENT', 'ADMIN']}>
-                    <LearnerDashboard />
+                    <MainLayout />
                   </RequireRole>
                 </RequireAuth>
               }
-            />
+            >
+              <Route index element={<LearnerDashboard />} />
+              <Route path="my-courses" element={<MyCourses />} />
+              {/* Note: Roadmap Detail removed from here to allow fullscreen */}
+            </Route>
 
             {/* =========================================
-                3. VISUAL DESIGNER (Full Screen)
+                3. LEARNER FULLSCREEN TOOLS (No Sidebar)
                ========================================= */}
-            {/* We place this OUTSIDE the AdminLayout so it has full screen space (No Sidebar) */}
+            <Route 
+              path="/dashboard/roadmap/:id" 
+              element={
+                <RequireAuth>
+                  <RequireRole allowedRoles={['STUDENT', 'ADMIN']}>
+                    <RoadmapDetail />
+                  </RequireRole>
+                </RequireAuth>
+              } 
+            />
+            
+            {/* =========================================
+                4. ADMIN ROUTES (With Sidebar Layout)
+               ========================================= */}
+            <Route
+              path="/admin"
+              element={
+                <RequireAuth>
+                  <RequireRole allowedRoles={['ADMIN']}>
+                    <MainLayout /> 
+                  </RequireRole>
+                </RequireAuth>
+              }
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="roadmaps" element={<ManageRoadmaps />} />
+              <Route path="courses" element={<ManageCourses />} />
+              <Route path="departments" element={<ManageDepartments />} />
+            </Route>
+
+            {/* =========================================
+                5. ADMIN FULLSCREEN TOOLS (No Sidebar)
+               ========================================= */}
             <Route 
               path="/admin/roadmaps/design/:slug" 
               element={
@@ -81,34 +116,6 @@ export default function App() {
                 </RequireAuth>
               } 
             />
-
-            {/* =========================================
-                4. ADMIN DASHBOARD (With Sidebar)
-               ========================================= */}
-            <Route
-              path="/admin"
-              element={
-                <RequireAuth>
-                  <RequireRole allowedRoles={['ADMIN']}>
-                    <AdminLayout /> 
-                  </RequireRole>
-                </RequireAuth>
-              }
-            >
-              {/* Default Redirect */}
-              <Route index element={<Navigate to="dashboard" replace />} />
-              
-              {/* Dashboard */}
-              <Route path="dashboard" element={<AdminDashboard />} />
-              
-              {/* Management Pages */}
-              <Route path="roadmaps" element={<ManageRoadmaps />} />
-              <Route path="courses" element={<ManageCourses />} />
-              <Route path="departments" element={<ManageDepartments />} />
-              
-              {/* Placeholder for Users */}
-              <Route path="users" element={<div>🚧 Manage Users Component</div>} />
-            </Route>
 
             {/* Fallback */}
             <Route path="*" element={<div>Page Not Found</div>} />

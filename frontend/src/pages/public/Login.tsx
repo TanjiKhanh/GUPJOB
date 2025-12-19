@@ -41,8 +41,8 @@ export default function LoginPage() {
       // Role-Based Redirect
       // WARNING: If 'user' is undefined, this check fails and goes to 'else'
       if (user?.role === 'ADMIN') {
-        console.log('👑 User is ADMIN -> Going to /admin/dashboard');
-        navigate('/admin/dashboard', { replace: true }); // Ensure this matches your route path
+        console.log('👑 User is ADMIN -> Going to /admin');
+        navigate('/admin', { replace: true }); // Ensure this matches your route path
       } else {
         console.log('👤 User is STUDENT/MENTOR -> Going to /dashboard');
         navigate('/dashboard', { replace: true });

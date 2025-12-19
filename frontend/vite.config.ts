@@ -23,7 +23,7 @@ export default defineConfig({
           }
         },
       },
-      '/api': {
+      '/roadmaps': {
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,

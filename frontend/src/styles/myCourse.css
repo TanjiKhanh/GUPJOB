@@ -1,0 +1,176 @@
+/* src/styles/myCourse.css */
+
+.courses-container {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+  max-width: 1200px;
+  /* Remove margin: 0 auto; if you want it left-aligned like dashboard */
+  padding: 0 1rem;
+}
+
+.page-header {
+  margin-bottom: 2.5rem;
+}
+
+.page-title {
+  font-size: 1.5rem; /* Match Figma 24px/bold */
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* --- Course Sections --- */
+.course-section {
+  margin-bottom: 3rem;
+}
+
+.section-title {
+  font-size: 1rem; /* Match Figma 16px/bold */
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 1rem;
+}
+
+/* Grid: 3 columns maximum */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* --- Course Card --- */
+.course-grid-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  /* Subtle transition */
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.course-grid-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.card-top h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+}
+
+.card-desc {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1.5rem 0;
+  /* Limit to 3 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- Progress Section --- */
+.card-progress-section {
+  margin-top: auto;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.label-text {
+  color: #475569;
+}
+
+/* --- Variant: In Progress (Blue) --- */
+.course-grid-card.in-progress .label-percent {
+  color: #4f46e5;
+}
+.course-grid-card.in-progress .progress-fill {
+  background-color: #4f46e5;
+}
+.course-grid-card.in-progress .action-link {
+  color: #4f46e5;
+}
+
+/* --- Variant: Completed (Green) --- */
+.course-grid-card.completed .label-percent {
+  color: #16a34a; /* Green */
+}
+.course-grid-card.completed .progress-fill {
+  background-color: #16a34a;
+}
+.course-grid-card.completed .action-link {
+  color: #16a34a;
+}
+
+/* --- Variant: Not Started (Gray) --- */
+.course-grid-card.not-started .label-text {
+  color: #94a3b8;
+}
+.course-grid-card.not-started .progress-fill {
+  background-color: #cbd5e1; /* Just a tiny hint if needed */
+  width: 0 !important;
+}
+.course-grid-card.not-started .action-link {
+  color: #4f46e5;
+}
+
+/* --- Progress Bar --- */
+.progress-track {
+  width: 100%;
+  height: 6px; /* Thinner */
+  background-color: #f1f5f9;
+  border-radius: 99px; /* Pill shape */
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+/* --- Action Link --- */
+.action-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.action-link:hover {
+  text-decoration: underline;
+}
+
+/* --- Static Badges (Optional Courses) --- */
+.badge-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 500;
+}

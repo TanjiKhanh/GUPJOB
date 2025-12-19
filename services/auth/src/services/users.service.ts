@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UsersRepository } from '../repositories/user.repository';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 
 /**
  * UsersService is a thin layer calling UsersRepository (Prisma).
@@ -10,15 +10,15 @@ import { User } from '@prisma/client';
 export class UsersService {
   constructor(private readonly usersRepo: UsersRepository) {}
 
-  findByEmail(email: string) {
+  findByEmail(email: string): Promise<User | null> {
     return this.usersRepo.findByEmail(email);
   }
 
-  findById(id: number) {
+  findById(id: number): Promise<User | null> {
     return this.usersRepo.findById(id);
   }
 
-  createUser(payload: { email: string; password: string; name?: string; role?: string }): Promise<User> {
+  createUser(payload: Prisma.UserCreateInput): Promise<User> {
     return this.usersRepo.create(payload);
   }
 

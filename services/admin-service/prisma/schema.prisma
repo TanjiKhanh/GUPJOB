@@ -37,6 +37,7 @@ model Course {
   type         CourseType
   departmentId Int?     // reference to admin department (no cross-service relations)
   department   Department? @relation(fields: [departmentId], references: [id])
+  priorityJob     String[] 
   structure    Json?      // visual layout / metadata
   // relations
   roadmaps     Roadmap[]

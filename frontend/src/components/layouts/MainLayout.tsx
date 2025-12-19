@@ -1,23 +1,20 @@
-import React, { ReactNode } from 'react';
-import Sidebar from '../layouts/Sidebar';
-import Header from '../layouts/Header';
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import Sidebar from '../layouts/Sidebar'; // 👈 Ensure this path points to your smart Sidebar
 import '../../styles/dashboard.css';
 
-interface MainLayoutProps {
-  children: ReactNode;
-  title: string;
-  subtitle?: string;
-}
-
-export default function MainLayout({ children, title, subtitle }: MainLayoutProps) {
+export default function AdminLayout() {
+  // NO PROPS are passed here anymore.
+  // The pages (Dashboard, Courses, etc.) are responsible for their own titles.
   return (
     <div className="dashboard-container">
+      {/* 1. Sidebar is persistent */}
       <Sidebar />
+
+      {/* 2. Main Content Area */}
       <main className="dashboard-main">
-        <Header title={title} subtitle={subtitle} />
-        <div className="dashboard-content">
-          {children}
-        </div>
+        {/* 3. React Router injects the active page here */}
+        <Outlet />
       </main>
     </div>
   );

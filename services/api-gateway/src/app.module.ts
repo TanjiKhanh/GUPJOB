@@ -42,9 +42,9 @@ export class AppModule implements NestModule {
     consumer
       .apply(
         AuthMiddleware, 
-        createServiceProxy(userTarget, { '^/api/roadmap': '/roadmap' })
+        createServiceProxy(userTarget, { '^/roadmaps': '/roadmaps' })
       )
-      .forRoutes({ path: 'api/roadmap/(.*)', method: RequestMethod.ALL });
+      .forRoutes({ path: 'roadmaps/(.*)', method: RequestMethod.ALL });
 
 
     // ---------------------------------------------------------

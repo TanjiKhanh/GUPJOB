@@ -15,6 +15,7 @@ import 'reactflow/dist/style.css';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin.service';
 import Header from '../../components/layouts/Header';
+import NodeEditorDrawer from '../../components/roadmap/NodeEditorDrawer'; // 👈 Import the Drawer
 
 export default function RoadmapDesigner() {
   const { slug } = useParams();
@@ -22,12 +23,17 @@ export default function RoadmapDesigner() {
   
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  
   const [roadmapTitle, setRoadmapTitle] = useState('');
   const [roadmapId, setRoadmapId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // 🟢 Drawer State
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   // =========================================================
-  // 1. FETCH & TRANSFORM (DB -> ReactFlow)
+  // 1. FETCH & TRANSFORM
   // =========================================================
   useEffect(() => {
     const loadRoadmap = async () => {
@@ -37,30 +43,29 @@ export default function RoadmapDesigner() {
         setRoadmapTitle(data.title);
         setRoadmapId(data.id!);
 
-        // A. Transform Nodes
-        // DB: { nodeKey: "html-css", coords: {x,y}, title: "..." }
-        // RF: { id: "html-css", position: {x,y}, data: { label: "..." } }
+        // Transform Nodes (Include hidden metadata for the drawer)
         const flowNodes: Node[] = (data.nodes || []).map((dbNode: any) => ({
           id: dbNode.nodeKey, 
           position: dbNode.coords || { x: 0, y: 0 },
-          data: { label: dbNode.title },
-          type: 'default' 
+          type: 'default', // Using Standard Nodes per your request
+          data: { 
+            label: dbNode.title,      // Displayed on canvas
+            title: dbNode.title,      // Stored for drawer
+            summary: dbNode.summary,  // Stored for drawer
+            contentMd: dbNode.contentMd // Stored for drawer
+          } 
         }));
 
-        // B. Transform Edges
-        // DB: { sourceKey: "html-css", targetKey: "js" }
-        // RF: { id: "e-html-css-js", source: "html-css", target: "js" }
         const flowEdges: Edge[] = (data.edges || []).map((dbEdge: any) => ({
           id: `e-${dbEdge.sourceKey}-${dbEdge.targetKey}`,
           source: dbEdge.sourceKey,
           target: dbEdge.targetKey,
-          type: 'smoothstep', // nice curved lines
-          markerEnd: { type: MarkerType.ArrowClosed }, // Add arrow at end
+          type: 'smoothstep', 
+          markerEnd: { type: MarkerType.ArrowClosed }, 
         }));
 
-        // If empty, add a default start node
         if (flowNodes.length === 0) {
-          setNodes([{ id: 'start', position: { x: 250, y: 50 }, data: { label: 'Start Topic' } }]);
+          setNodes([{ id: 'start', position: { x: 250, y: 50 }, data: { label: 'Start Topic', title: 'Start Topic' } }]);
         } else {
           setNodes(flowNodes);
           setEdges(flowEdges);
@@ -68,7 +73,6 @@ export default function RoadmapDesigner() {
 
       } catch (err) {
         console.error("Failed to load roadmap", err);
-        alert("Could not load roadmap data");
       }
     };
     loadRoadmap();
@@ -78,60 +82,71 @@ export default function RoadmapDesigner() {
   // 2. HANDLERS
   // =========================================================
   
-  // Connect two nodes
   const onConnect = useCallback((params: Connection) => {
     setEdges((eds) => addEdge({ ...params, type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } }, eds));
   }, [setEdges]);
 
-  // Double Click to Rename Node
+  // 🟢 Double Click -> Open Drawer
   const onNodeDoubleClick = (event: React.MouseEvent, node: Node) => {
-    const newLabel = prompt("Enter new title for this topic:", node.data.label);
-    if (newLabel) {
-      setNodes((nds) =>
-        nds.map((n) => {
-          if (n.id === node.id) {
-            n.data = { ...n.data, label: newLabel };
-          }
-          return n;
-        })
-      );
-    }
+    setSelectedNode(node);
+    setIsDrawerOpen(true);
   };
 
-  // Add new node button
+  // 🟢 Handle Save FROM Drawer
+  const onNodeDrawerSave = (nodeId: string, newData: any) => {
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.id === nodeId) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              label: newData.title,       // Update visual label
+              title: newData.title,       // Update data title
+              summary: newData.summary,
+              contentMd: newData.contentMd
+            }
+          };
+        }
+        return n;
+      })
+    );
+  };
+
   const addNode = () => {
-    // Generate a simple ID (e.g., "node-1234") to act as the unique key
     const id = `node-${Math.floor(Math.random() * 10000)}`;
     const newNode: Node = {
       id,
       position: { x: Math.random() * 400 + 50, y: Math.random() * 400 + 50 },
-      data: { label: 'New Topic' }, 
+      data: { label: 'New Topic', title: 'New Topic', status: 'AVAILABLE' }, 
     };
     setNodes((nds) => nds.concat(newNode));
   };
 
   // =========================================================
-  // 3. SAVE (ReactFlow -> DB)
+  // 3. SAVE TO DB
   // =========================================================
   const handleSave = async () => {
     if (!roadmapId) return;
     setSaving(true);
     try {
-      // A. Convert ReactFlow Nodes back to DB Structure
+      // Map ReactFlow nodes back to DB format
       const nodesToSave = nodes.map((n) => ({
-        nodeKey: n.id,             // Maps 'id' -> 'nodeKey'
-        title: n.data.label,       // Maps 'data.label' -> 'title'
-        coords: n.position,        // Maps 'position' -> 'coords'
-        isRequired: true           // Default
+        nodeKey: n.id,
+        title: n.data.title || n.data.label, // Fallback to label
+        coords: n.position,
+        isRequired: true,
+        // 🟢 Save the extra metadata
+        summary: n.data.summary,
+        contentMd: n.data.contentMd,
       }));
+      
 
-      // B. Convert ReactFlow Edges back to DB Structure
       const edgesToSave = edges.map((e) => ({
-        sourceKey: e.source,       // Maps 'source' -> 'sourceKey'
-        targetKey: e.target        // Maps 'target' -> 'targetKey'
+        sourceKey: e.source,
+        targetKey: e.target
       }));
 
-      // C. Send Payload to Backend
       await adminService.updateRoadmap(roadmapId, {
         nodes: nodesToSave,
         edges: edgesToSave
@@ -151,7 +166,7 @@ export default function RoadmapDesigner() {
       <div style={{ padding: '0 20px', background: 'white', borderBottom: '1px solid #eee' }}>
         <Header 
           title={`Designing: ${roadmapTitle}`} 
-          subtitle="Drag nodes to rearrange. Double-click a node to rename."
+          subtitle="Double-click a node to edit details (Summary, Content)."
         />
         <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
           <button onClick={addNode} className="btn-primary" style={{ width: 'auto', padding: '8px 16px' }}>
@@ -173,7 +188,7 @@ export default function RoadmapDesigner() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeDoubleClick={onNodeDoubleClick} // 👈 Added Double Click Handler
+          onNodeDoubleClick={onNodeDoubleClick} // 👈 Triggers Drawer
           fitView
         >
           <Background color="#ccc" gap={20} />
@@ -181,6 +196,14 @@ export default function RoadmapDesigner() {
           <MiniMap />
         </ReactFlow>
       </div>
+
+      {/* 🟢 Render the Editor Drawer */}
+      <NodeEditorDrawer 
+        isOpen={isDrawerOpen}
+        node={selectedNode}
+        onClose={() => setIsDrawerOpen(false)}
+        onSave={onNodeDrawerSave}
+      />
     </div>
   );
 }

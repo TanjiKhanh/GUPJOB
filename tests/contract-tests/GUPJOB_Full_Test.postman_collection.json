@@ -1,446 +1,207 @@
 {
-  "info": {
-    "name": "GUPJOB - Gateway API",
-    "_postman_id": "gupjob-gateway-project",
-    "description": "Postman collection running ALL requests through the API Gateway (Port 8080).",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "variable": [
-    {
-      "key": "gateway_url",
-      "value": "http://localhost:8080",
-      "type": "string"
-    },
-    {
-      "key": "jwt",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "mentor_jwt",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "admin_department_id",
-      "value": "1",
-      "type": "string"
-    },
-    {
-      "key": "admin_course_id",
-      "value": "1",
-      "type": "string"
-    },
-    {
-      "key": "master_roadmap_slug",
-      "value": "frontend-developer",
-      "type": "string"
-    },
-    {
-      "key": "user_roadmap_id",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "submission_id",
-      "value": "",
-      "type": "string"
-    }
-  ],
-  "item": [
-    {
-      "name": "Auth / Register",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"P@ssw0rd!\",\n  \"name\": \"Admin User\",\n  \"role\": \"ADMIN\"\n}"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/auth/register",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "auth",
-            "register"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Auth / Login (get JWT)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"P@ssw0rd!\"\n}"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/auth/login",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "auth",
-            "login"
-          ]
-        }
-      },
-      "response": [],
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "// Extract token from login response and set collection variable 'jwt'",
-              "var jsonData = pm.response.json();",
-              "if (jsonData && jsonData.accessToken) {",
-              "    pm.collectionVariables.set('jwt', jsonData.accessToken);",
-              "}"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Admin: Create Department (IT)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"IT\",\n  \"slug\": \"it\",\n  \"description\": \"Information Technology\"\n}"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/admin/departments",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "admin",
-            "departments"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Admin: List Departments",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "url": {
-          "raw": "{{gateway_url}}/admin/departments",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "admin",
-            "departments"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Admin: Create Course (Frontend Developer - Job)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"title\": \"Frontend Developer\",\n  \"slug\": \"frontend-developer\",\n  \"description\": \"Frontend job path\",\n  \"type\": \"JOB\",\n  \"departmentId\": {{admin_department_id}}\n}"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/admin/courses",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "admin",
-            "courses"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Admin: Create Master Roadmap (frontend-developer)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"slug\": \"frontend-developer\",\n  \"title\": \"Frontend Developer\",\n  \"description\": \"Master frontend\",\n  \"courseId\": {{admin_course_id}},\n  \"nodes\": [\n    { \"nodeKey\": \"html-css\", \"title\": \"HTML & CSS\", \"coords\": { \"x\": 100, \"y\": 100 } },\n    { \"nodeKey\": \"javascript\", \"title\": \"JavaScript Fundamentals\", \"coords\": { \"x\": 300, \"y\": 100 } },\n    { \"nodeKey\": \"react\", \"title\": \"React Fundamentals\", \"coords\": { \"x\": 500, \"y\": 100 } }\n  ],\n  \"edges\": [\n    { \"sourceKey\": \"html-css\", \"targetKey\": \"javascript\" },\n    { \"sourceKey\": \"javascript\", \"targetKey\": \"react\" }\n  ]\n}\n"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/admin/roadmaps",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "admin",
-            "roadmaps"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Admin: Get Master Roadmap by slug",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "url": {
-          "raw": "{{gateway_url}}/admin/roadmaps/{{master_roadmap_slug}}",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "admin",
-            "roadmaps",
-            "{{master_roadmap_slug}}"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "User: Assemble Initial Roadmaps for user",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"jobRoadmapSlug\": \"{{master_roadmap_slug}}\"\n}\n"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/api/roadmap/assemble-initial",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "api",
-            "roadmap",
-            "assemble-initial"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "User: List UserRoadmaps",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "url": {
-          "raw": "{{gateway_url}}/api/roadmap/user-roadmaps",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "api",
-            "roadmap",
-            "user-roadmaps"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "User: Get UserRoadmap by id",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "url": {
-          "raw": "{{gateway_url}}/api/roadmap/user-roadmaps/{{user_roadmap_id}}",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "api",
-            "roadmap",
-            "user-roadmaps",
-            "{{user_roadmap_id}}"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "User: Mark node as in progress",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"action\": \"mark_in_progress\" }\n"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/api/roadmap/user-roadmaps/{{user_roadmap_id}}/nodes/javascript",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "api",
-            "roadmap",
-            "user-roadmaps",
-            "{{user_roadmap_id}}",
-            "nodes",
-            "javascript"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "User: Mark node as complete",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"action\": \"self_complete\" }\n"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/api/roadmap/user-roadmaps/{{user_roadmap_id}}/nodes/javascript",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "api",
-            "roadmap",
-            "user-roadmaps",
-            "{{user_roadmap_id}}",
-            "nodes",
-            "javascript"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Mentor: Review Submission (approve)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{mentor_jwt}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"action\": \"approve\", \"comment\": \"Good job - verified.\" }\n"
-        },
-        "url": {
-          "raw": "{{gateway_url}}/api/mentor/verifications/{{submission_id}}/review",
-          "host": [
-            "{{gateway_url}}"
-          ],
-          "path": [
-            "api",
-            "mentor",
-            "verifications",
-            "{{submission_id}}",
-            "review"
-          ]
-        }
-      },
-      "response": []
-    }
-  ]
+	"info": {
+		"_postman_id": "gupjob-lazy-architecture",
+		"name": "GUPJOB - Lazy Architecture Test",
+		"description": "Updated collection for Auth, Admin, and User Service (Lazy Nodes + Cache).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{ "key": "gateway_url", "value": "http://localhost:8080", "type": "string" },
+		{ "key": "admin_token", "value": "", "type": "string" },
+		{ "key": "student_token", "value": "", "type": "string" },
+		{ "key": "roadmap_slug", "value": "frontend-dev", "type": "string" }
+	],
+	"item": [
+		{
+			"name": "1. Auth Service",
+			"item": [
+				{
+					"name": "Register Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@test.com\",\n    \"password\": \"123456\",\n    \"name\": \"Admin User\",\n    \"role\": \"ADMIN\",\n    \"departmentId\": 1,\n    \"jobPriority\": \"admin\"\n}"
+						},
+						"url": "{{gateway_url}}/auth/register"
+					}
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.collectionVariables.set(\"admin_token\", jsonData.access_token);",
+									"    console.log(\"Admin Token Set\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@test.com\",\n    \"password\": \"123456\"\n}"
+						},
+						"url": "{{gateway_url}}/auth/login"
+					}
+				},
+				{
+					"name": "Register Student (Frontend)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@test.com\",\n    \"password\": \"123456\",\n    \"name\": \"Jane Student\",\n    \"departmentId\": 1,\n    \"jobPriority\": \"frontend-dev\"\n}"
+						},
+						"url": "{{gateway_url}}/auth/register"
+					}
+				},
+				{
+					"name": "Login Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.collectionVariables.set(\"student_token\", jsonData.access_token);",
+									"    console.log(\"Student Token Set\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@test.com\",\n    \"password\": \"123456\"\n}"
+						},
+						"url": "{{gateway_url}}/auth/login"
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Admin Service (Setup)",
+			"item": [
+				{
+					"name": "Create Dept (CS)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"name\": \"Computer Science\", \"slug\": \"cs\" }"
+						},
+						"url": "{{gateway_url}}/admin/departments"
+					}
+				},
+				{
+					"name": "Create Course (Frontend)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Frontend Mastery\",\n    \"slug\": \"frontend-mastery\",\n    \"type\": \"JOB\",\n    \"departmentId\": 1,\n    \"priorityJob\": [\"frontend-dev\"]\n}"
+						},
+						"url": "{{gateway_url}}/admin/courses"
+					}
+				},
+				{
+					"name": "Create Roadmap (Frontend)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Frontend Developer Path\",\n  \"slug\": \"{{roadmap_slug}}\",\n  \"courseId\": 1,\n  \"nodes\": [\n    { \"nodeKey\": \"html\", \"title\": \"HTML\", \"coords\": {\"x\":0,\"y\":0} },\n    { \"nodeKey\": \"css\", \"title\": \"CSS\", \"coords\": {\"x\":100,\"y\":0} },\n    { \"nodeKey\": \"js\", \"title\": \"JavaScript\", \"coords\": {\"x\":200,\"y\":0} }\n  ],\n  \"edges\": [\n    { \"sourceKey\": \"html\", \"targetKey\": \"css\" },\n    { \"sourceKey\": \"css\", \"targetKey\": \"js\" }\n  ]\n}"
+						},
+						"url": "{{gateway_url}}/admin/roadmaps"
+					}
+				},
+				{
+					"name": "Get Summary (Cache Test)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"url": "{{gateway_url}}/admin/roadmaps/{{roadmap_slug}}/summary"
+					}
+				}
+			]
+		},
+		{
+			"name": "3. User Service (Flow)",
+			"item": [
+				{
+					"name": "Enroll (Lazy Snapshot)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"slug\": \"{{roadmap_slug}}\" }"
+						},
+						"url": "{{gateway_url}}/roadmaps/enroll"
+					}
+				},
+				{
+					"name": "Dashboard List (Fast Read)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"url": "{{gateway_url}}/roadmaps/my"
+					}
+				},
+				{
+					"name": "Get Personalized Map (Merge)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"url": "{{gateway_url}}/roadmaps/1"
+					}
+				}
+			]
+		}
+	]
 }

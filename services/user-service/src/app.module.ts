@@ -1,34 +1,51 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { RoadmapController } from './controllers/roadmap.controller';
-import { RoadmapService } from './services/roadmap.service';
-import { RoadmapRepository } from './repositories/roadmap.repository';
-import { DepartmentRepository } from './repositories/department.repository';
-import { CourseRepository } from './repositories/course.repository';
+import { ConfigModule, ConfigService } from '@nestjs/config'; // 👈 Import ConfigService
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
+import { JwtModule } from '@nestjs/jwt'; // 👈 Import JwtModule
 
-// 👇 FIX 1: Import the Module, not just the service
-import { PrismaModule } from '@libs/database';
+import { PrismaModule } from './prisma/prisma.module';
+import { RoadmapsModule } from './roadmaps/roadmaps.module';
+import { AdminClientModule } from './external/admin-client/admin-client.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
+    // 1. Config
+    ConfigModule.forRoot({ isGlobal: true }),
+
+    // 2. Database
+    PrismaModule,
+
+    // 3. Cache
+    CacheModule.registerAsync({
       isGlobal: true,
+      useFactory: async () => ({
+        store: await redisStore({
+          socket: {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+          },
+          ttl: 3600 * 1000,
+        }),
+      }),
     }),
-    // 👇 FIX 2: Add PrismaModule here
-    PrismaModule, 
-  ],
-  controllers: [RoadmapController],
-  providers: [
-    // 👇 FIX 3: REMOVE PrismaService from here. 
-    // It is already provided by PrismaModule above.
 
-    // Repositories
-    RoadmapRepository,
-    DepartmentRepository,
-    CourseRepository,
+    // 4. ⚡ JWT AUTH (THE FIX)
+    JwtModule.registerAsync({
+      global: true, // 👈 THIS LINE IS CRITICAL. It makes JwtService visible to RoadmapsModule.
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '1h' },
+      }),
+      inject: [ConfigService],
+    }),
 
-    // Business service
-    RoadmapService,
+    // 5. External & Features
+    AdminClientModule,
+    RoadmapsModule,
   ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

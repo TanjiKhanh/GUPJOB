@@ -3,8 +3,7 @@ import { RoadmapController } from './roadmap.controller';
 import { RoadmapService } from './roadmap.service';
 import { RoadmapRepository } from './roadmap.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from '../../common/guards/roles.guard';
+
 
 @Module({
   imports: [],
@@ -13,10 +12,6 @@ import { RolesGuard } from '../../common/guards/roles.guard';
     PrismaService,
     RoadmapRepository,
     RoadmapService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
   ],
   exports: [RoadmapService],
 })

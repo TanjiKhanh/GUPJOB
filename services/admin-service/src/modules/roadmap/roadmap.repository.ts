@@ -89,12 +89,41 @@ export class RoadmapRepository {
     });
   }
 
+
+  async findSummaryBySlug(slug: string) {
+    const roadmap = await this.prisma.roadmap.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        updatedAt: true, // 👈 Use this as your "version"
+        // ⚡ AGGREGATION: Just count the nodes, don't fetch them!
+        _count: {
+          select: { nodes: true }
+        }
+      }
+    });
+
+    if (!roadmap) return null;
+
+    // Flatten the result to match your DTO
+    return {
+      id: roadmap.id,
+      slug: roadmap.slug,
+      title: roadmap.title,
+      version: roadmap.updatedAt.toISOString(),
+      totalNodes: roadmap._count.nodes // 👈 The count is here
+    };
+  }
+
   async updateBasic(id: number, data: { title?: string; description?: string; structure?: any; courseId?: number }) {
     return this.prisma.roadmap.update({
       where: { id },
       data,
     });
   }
+  
 
   /**
    * Replace nodes and edges for a roadmap inside a transaction.

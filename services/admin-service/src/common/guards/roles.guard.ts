@@ -1,43 +1,48 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator'; // 👈 Same import as above
 
-/**
- * RolesGuard reads the metadata added by @Roles(...) and checks req.user.role.
- * It expects AuthGuard to run earlier and attach req.user.
- */
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // 1. Get the required roles from the @Roles decorator
-    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
-    console.log('🔒 Required Roles:', requiredRoles);
+    // 1. 🔓 CHECK FOR PUBLIC FIRST
+    // We MUST do this here too. If we don't, the code below will try to read
+    // 'req.user.role', which will crash if the user is a Guest (no token).
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
-    if (!requiredRoles || requiredRoles.length === 0) {
-      return true; // No restriction
+    if (isPublic) {
+      console.log('🔓 Public route accessed, skipping role check');
+      return true; // ✅ Bypass role check for public routes
     }
 
-    // 2. Get the user from the request (attached by JwtStrategy)
+    // 2. Get required roles
+    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
+    
+    // If no specific roles are required, allow access
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true; 
+    }
+
+    // 3. Get User (Attached by AuthGuard)
     const req = context.switchToHttp().getRequest();
     const user = req.user;
-    console.log('👤 User from Request:', user);
 
+    // Safety check: If we are here, we expect a user.
     if (!user || !user.role) {
-      console.error('❌ User is missing or has no role property!');
+      console.error('❌ Access Denied: User missing or has no role');
       return false;
     }
 
-    // 3. Check logic
-    // Handle if user.role is an Array or String
-    let hasRole = false;
+    // 4. Verify Role
     if (Array.isArray(user.role)) {
-      hasRole = user.role.some((r) => requiredRoles.includes(r));
-    } else {
-      hasRole = requiredRoles.includes(user.role);
+      return user.role.some((r) => requiredRoles.includes(r));
     }
-
-    console.log(`Checking if '${user.role}' is inside [${requiredRoles}] -> Result: ${hasRole}`);
-    return hasRole;
+    
+    return requiredRoles.includes(user.role);
   }
 }

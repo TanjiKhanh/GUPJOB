@@ -1,6 +1,9 @@
 version: "3.8"
 
 services:
+  # =========================================
+  # 1. DATABASE
+  # =========================================
   postgres:
     image: postgres:15
     container_name: gupjob-postgres
@@ -18,6 +21,15 @@ services:
       retries: 10
     restart: unless-stopped
 
+
+    redis:
+      image: redis:alpine
+      container_name: gupjob-redis
+      ports:
+        - "6379:6379"
+      restart: unless-stopped
+      command: redis-server --save 60 1 --loglevel warning # Optional persistence settings
+
   adminer:
     image: adminer
     container_name: gupjob-adminer
@@ -27,6 +39,9 @@ services:
     depends_on:
       - postgres
 
+  # =========================================
+  # 2. CORE SERVICES
+  # =========================================
   auth:
     build:
       context: ../services/auth
@@ -40,7 +55,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   api-gateway:
@@ -52,15 +68,17 @@ services:
       - JWT_SECRET=supersecret_dev_key
       - AUTH_SERVICE_URL=http://auth:3000
       - ADMIN_SERVICE_URL=http://admin-service:4100
-      - USER_SERVICE_URL=http://user-service:4000
+      # Removed User Service URL since the service is gone
     ports:
       - "8080:8080"
     depends_on:
       - auth
       - admin-service
-      - user-service
     restart: unless-stopped
 
+  # =========================================
+  # 3. BUSINESS LOGIC SERVICES
+  # =========================================
   admin-service:
     build:
       context: ../services/admin-service
@@ -72,69 +90,8 @@ services:
     ports:
       - "4100:4100"
     depends_on:
-      - postgres
-    restart: unless-stopped
-
-  user-service:
-    build:
-      context: ../services/user-service
-      dockerfile: Dockerfile
-    container_name: gupjob-user
-    environment:
-      - DATABASE_URL=postgresql://gupjob:gupjob_pass@postgres:5432/gupjob_dev?schema=public
-      - ADMIN_SERVICE_URL=http://admin-service:4100
-      - MENTOR_SERVICE_URL=http://mentor-service:4200
-      - PORT=4000
-    ports:
-      - "4000:4000"
-    depends_on:
-      - postgres
-      - admin-service
-    restart: unless-stopped
-
-  mentor-service:
-    build:
-      context: ../services/mentor-service
-      dockerfile: Dockerfile
-    container_name: gupjob-mentor
-    environment:
-      - DATABASE_URL=postgresql://gupjob:gupjob_pass@postgres:5432/gupjob_dev?schema=public
-      - PORT=4200
-    ports:
-      - "4200:4200"
-    depends_on:
-      - postgres
-    restart: unless-stopped
-
-  notification-service:
-    build:
-      context: ../services/notification-service
-      dockerfile: Dockerfile
-    container_name: gupjob-notification
-    environment:
-      - DATABASE_URL=postgresql://gupjob:gupjob_pass@postgres:5432/gupjob_dev?schema=public
-      - PORT=4300
-    ports:
-      - "4300:4300"
-    depends_on:
-      - postgres
-    restart: unless-stopped
-
-  verification-service:
-    build:
-      context: ../services/verification-service
-      dockerfile: Dockerfile
-    container_name: gupjob-verification
-    environment:
-      - DATABASE_URL=postgresql://gupjob:gupjob_pass@postgres:5432/gupjob_dev?schema=public
-      - USER_SERVICE_URL=http://user-service:4000
-      - NOTIFICATION_SERVICE_URL=http://notification-service:4300
-      - PORT=4400
-    ports:
-      - "4400:4400"
-    depends_on:
-      - postgres
-      - user-service
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

@@ -1,36 +1,37 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../auth/AuthContext'; // Updated import
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext'; // Adjust path if needed
 import logo from '../../assets/images/logo-gupjob-primary.png';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
-  const location = useLocation();
+  const navigate = useNavigate();
 
-  const isActive = (path: string) => 
-    location.pathname.startsWith(path) ? 'active' : '';
+  // Helper for NavLink styling
+  const getNavLinkClass = ({ isActive }: { isActive: boolean }) => 
+    isActive ? 'nav-link active' : 'nav-link';
 
   // --- 1. ADMIN Navigation ---
   const AdminNav = () => (
     <>
       <div className="nav-section-label">Administration</div>
-      <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>
-        🧠 Dashboard
-      </Link>
-      <Link to="/admin/roadmaps" className={isActive('/admin/roadmaps')}>
-        🗺️ Roadmaps
-      </Link>
-      <Link to="/admin/courses" className={isActive('/admin/courses')}>
-        📚 Courses
-      </Link>
-      <Link to="/admin/departments" className={isActive('/admin/departments')}>
-        📂 Departments
-      </Link>
+      <NavLink to="/admin" end className={getNavLinkClass}>
+        <span>🧠</span> Dashboard
+      </NavLink>
+      <NavLink to="/admin/roadmaps" className={getNavLinkClass}>
+        <span>🗺️</span> Roadmaps
+      </NavLink>
+      <NavLink to="/admin/courses" className={getNavLinkClass}>
+        <span>📚</span> Courses
+      </NavLink>
+      <NavLink to="/admin/departments" className={getNavLinkClass}>
+        <span>📂</span> Departments
+      </NavLink>
 
       <div className="nav-section-label">System</div>
-      <Link to="/admin/users" className={isActive('/admin/users')}>
-        👥 Users
-      </Link>
+      <NavLink to="/admin/users" className={getNavLinkClass}>
+        <span>👥</span> Users
+      </NavLink>
     </>
   );
 
@@ -38,15 +39,15 @@ export default function Sidebar() {
   const MentorNav = () => (
     <>
       <div className="nav-section-label">Mentorship</div>
-      <Link to="/mentor/dashboard" className={isActive('/mentor/dashboard')}>
-        🎛️ Mentor Hub
-      </Link>
-      <Link to="/mentor/requests" className={isActive('/mentor/requests')}>
-        ✅ Requests
-      </Link>
-      <Link to="/mentor/sessions" className={isActive('/mentor/sessions')}>
-        📅 Sessions
-      </Link>
+      <NavLink to="/mentor/dashboard" end className={getNavLinkClass}>
+        <span>🎛️</span> Mentor Hub
+      </NavLink>
+      <NavLink to="/mentor/requests" className={getNavLinkClass}>
+        <span>✅</span> Requests
+      </NavLink>
+      <NavLink to="/mentor/sessions" className={getNavLinkClass}>
+        <span>📅</span> Sessions
+      </NavLink>
     </>
   );
 
@@ -54,38 +55,64 @@ export default function Sidebar() {
   const LearnerNav = () => (
     <>
       <div className="nav-section-label">Learning</div>
-      <Link to="/dashboard" className={isActive('/dashboard')}>
-        📊 Dashboard
-      </Link>
-      <Link to="/roadmaps" className={isActive('/roadmaps')}>
-        🗺️ My Roadmaps
-      </Link>
-      <Link to="/progress" className={isActive('/progress')}>
-        🚀 Progress
-      </Link>
+      
+      {/* 🟢 FIXED: Absolute path /dashboard */}
+      {/* 'end' prop ensures it only lights up for exactly /dashboard, not /dashboard/my-courses */}
+      <NavLink to="/dashboard" end className={getNavLinkClass}>
+        <span>📊</span> Dashboard
+      </NavLink>
+
+      {/* 🟢 FIXED: Absolute path /dashboard/my-courses */}
+      <NavLink to="/dashboard/my-courses" 
+        className={({ isActive }) => 
+          // Active if matches exactly OR if we are inside a roadmap detail view
+          isActive || location.pathname.includes('/dashboard/roadmap') 
+            ? 'nav-link active' 
+            : 'nav-link'
+        }
+      >
+        <span>🗺️</span> My Roadmaps
+      </NavLink>
+
+      <NavLink to="/dashboard/progress" className={getNavLinkClass}>
+        <span>🚀</span> Progress
+      </NavLink>
       
       <div className="nav-section-label">Community</div>
-      <Link to="/mentors" className={isActive('/mentors')}>
-        👥 Find Mentors
-      </Link>
+      <NavLink to="/dashboard/mentors" className={getNavLinkClass}>
+        <span>👥</span> Find Mentors
+      </NavLink>
+
+      {/* Disabled/Pro Link Example */}
+      <div className="nav-link disabled" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+        <span>💬</span> Chat with Mentors <span className="badge-pro">PRO</span>
+      </div>
     </>
   );
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <aside className="dashboard-sidebar">
+      {/* Brand */}
       <div className="sidebar-brand">
-        <img src={logo} alt="Gub Job" className="brand-icon" style={{width: '24px', marginRight: '8px'}} />
+        <img src={logo} alt="Gub Job" className="brand-icon" style={{width: '24px'}} />
         <span>Gub Job</span>
       </div>
       
+      {/* Navigation */}
       <nav className="sidebar-nav">
-        {/* Dynamic Rendering based on Role */}
         {user?.role === 'ADMIN' && <AdminNav />}
         {user?.role === 'MENTOR' && <MentorNav />}
         {(!user?.role || user?.role === 'USER' || user?.role === 'STUDENT') && <LearnerNav />}
       </nav>
 
+      {/* Footer / Profile */}
       <div className="sidebar-footer">
+        
         {/* Pro Upsell (Only for Learners) */}
         {(user?.role === 'USER' || user?.role === 'STUDENT') && (
           <div className="pro-upsell">
@@ -107,7 +134,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <button onClick={logout} className="btn-logout">
+        <button onClick={handleLogout} className="btn-logout">
           🚪 Logout
         </button>
       </div>

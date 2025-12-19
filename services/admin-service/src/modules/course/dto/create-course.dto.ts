@@ -13,6 +13,7 @@ export class CreateCourseDto {
   @IsString()
   @IsOptional()
   description?: string;
+  
 
   @IsEnum(CourseType)
   @IsNotEmpty()

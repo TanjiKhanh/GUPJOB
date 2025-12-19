@@ -24,7 +24,8 @@ model User {
   password String
   name         String?
   role         Role       @default(STUDENT)
-  departmentSlug String?   // optional; references admin department by slug (no DB FK)
+  departmentId Int        // Maps to Admin Service Department ID
+  jobPriority  String   //  e.g., "frontend-dev", "data-scientist" (Maps to Roadmap Slug)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

@@ -1,7 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
-import { AppModule } from './app.module';
+import { AppModule } from './src/app.module';
 import { PrismaClientExceptionFilter } from './src/filter/prisma-exception.filter';
 import { AllExceptionsFilter } from './src/filter/all-exceptions.filter';
 import { ResponseInterceptor } from './src/filter/response.interceptor';
