@@ -1,0 +1,314 @@
+/* =========================================
+   🎨 DRAWER CONTAINER
+   ========================================= */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4); /* Darker backdrop */
+  backdrop-filter: blur(2px);
+  z-index: 40;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: -650px; /* Hidden */
+  width: 100%;
+  max-width: 600px; /* Wider for better reading */
+  height: 100vh;
+  background: white;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', -apple-system, sans-serif;
+  border-left: 1px solid #e5e7eb;
+}
+
+.drawer-panel.open {
+  right: 0;
+}
+
+/* =========================================
+   🧢 HEADER SECTION (Tabs vs Actions)
+   ========================================= */
+.drawer-header {
+  padding: 20px 32px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  height: 70px;
+}
+
+/* TABS (Black vs White) */
+.drawer-tabs {
+  display: flex;
+  gap: 12px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Active Tab (Black) */
+.tab-btn.active {
+  background: #0f172a; /* Slate-900 */
+  color: white;
+  border-color: #0f172a;
+}
+
+/* Inactive Tab (White with Border) */
+.tab-btn:not(.active) {
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+.tab-btn:not(.active):hover {
+  background: #f8fafc;
+  color: #334155;
+}
+
+/* =========================================
+   🚦 STATUS PILL & CLOSE BUTTON
+   ========================================= */
+.drawer-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* The Pill Shape Wrapper */
+.status-pill-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* The Colored Dot */
+.status-dot {
+  position: absolute;
+  left: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* The Select Dropdown */
+.status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 99px; /* Pill Shape */
+  padding: 8px 32px 8px 28px; /* Space for dot and arrow */
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.status-select:hover {
+  border-color: #94a3b8;
+}
+
+/* Tiny Chevron Arrow */
+.chevron-icon {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+/* Close 'X' Button */
+.btn-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+.btn-close:hover {
+  color: #ef4444; /* Red on hover */
+}
+
+/* =========================================
+   📄 BODY CONTENT
+   ========================================= */
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 40px; /* Generous padding */
+}
+
+/* Title */
+.drawer-title {
+  margin: 0 0 16px 0;
+  font-size: 2.2rem; /* Big Title */
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Summary Text */
+.drawer-summary-text {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #4b5563; /* Gray-600 */
+  margin-bottom: 40px;
+}
+
+/* =========================================
+   📝 MARKDOWN & RESOURCES
+   ========================================= */
+.markdown-content h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 32px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.markdown-content p {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.markdown-content a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid transparent;
+}
+.markdown-content a:hover {
+  border-bottom-color: #2563eb;
+}
+
+/* Remove bullets for resource lists */
+.markdown-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.markdown-content li {
+  margin-bottom: 10px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+/* 1. HEADERS WITH COLORED LINES */
+.md-header {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 32px;
+  margin-bottom: 20px;
+  white-space: nowrap;
+}
+
+/* The Line extending to the right */
+.md-header::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  margin-left: 12px;
+  background-color: #e2e8f0; /* Default Gray */
+  border-radius: 2px;
+}
+
+/* Header Color Variants */
+.header-green { color: #10b981; }
+.header-green::after { background-color: #10b981; }
+
+.header-purple { color: #8b5cf6; }
+.header-purple::after { background-color: #8b5cf6; }
+
+.header-blue { color: #3b82f6; }
+.header-blue::after { background-color: #3b82f6; }
+
+
+/* 2. BADGES (The "Article", "Video" Tags) */
+.md-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-right: 8px;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
+
+/* Badge Color Variants */
+.badge-yellow { background-color: #fef08a; color: #854d0e; } /* Article */
+.badge-purple { background-color: #f3e8ff; color: #7e22ce; } /* Video */
+.badge-green  { background-color: #dcfce7; color: #15803d; } /* Course */
+.badge-orange { background-color: #ffedd5; color: #c2410c; } /* Book */
+.badge-dark   { background-color: #334155; color: #ffffff; } /* Roadmap */
+.badge-gray   { background-color: #f1f5f9; color: #475569; } /* Default */
+
+
+/* 3. LISTS & LINKS */
+.markdown-content ul {
+  list-style: none; /* No bullets */
+  padding: 0;
+  margin: 0;
+}
+
+.md-list-item {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.md-link {
+  color: #1e293b; /* Dark Slate */
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: #cbd5e1;
+  text-underline-offset: 3px;
+  transition: all 0.2s;
+}
+
+.md-link:hover {
+  color: #2563eb;
+  text-decoration-color: #2563eb;
+}

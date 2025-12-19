@@ -1,6 +1,6 @@
 import React, { JSX } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from './AuthProvider';
+import { useAuth } from './AuthContext';
 
 export default function PublicOnly({ children }: { children: JSX.Element }) {
   const { user } = useAuth();

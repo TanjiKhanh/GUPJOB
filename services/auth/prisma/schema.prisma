@@ -1,35 +1,41 @@
+// Auth service schema (auth-service)
+// Minimal User model and RefreshToken; this DB owns authentication data.
+// Datasource uses AUTH_DATABASE_URL
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AUTH_DATABASE_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 enum Role {
-  LEARNER
+  STUDENT
   MENTOR
-  COMPANY
   ADMIN
+  COMPANY
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  role      Role     @default(LEARNER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  password String
+  name         String?
+  role         Role       @default(STUDENT)
+  departmentId Int        // Maps to Admin Service Department ID
+  jobPriority  String   //  e.g., "frontend-dev", "data-scientist" (Maps to Roadmap Slug)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   refreshTokens RefreshToken[]
 }
 
 model RefreshToken {
   id         String   @id @default(uuid())
-  user       User     @relation(fields: [userId], references: [id])
   userId     Int
+  user       User     @relation(fields: [userId], references: [id])
   tokenHash  String
   createdAt  DateTime @default(now())
   expiresAt  DateTime

@@ -1,7 +1,21 @@
-FROM node:18-alpine
+FROM node:18-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --production=false
+
+# Copy source and build
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-EXPOSE 8080
-CMD ["node", "index.js"]
+# Generate Prisma client and build
+RUN npm run start:dev
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+EXPOSE 3000
+CMD ["node", "dist/main.js"]

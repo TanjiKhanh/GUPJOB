@@ -1,12 +1,18 @@
-// Simple in-memory token storage.
-// Access token lives in memory to reduce XSS risk.
-// This module is intentionally tiny — use React Context to expose to UI.
-let accessToken: string | null = null;
+// src/auth/tokenStore.ts
+const ACCESS_TOKEN_KEY = 'gupjob_access_token';
 
-export function setAccessToken(token: string | null) {
-  accessToken = token;
-}
+export const getAccessToken = (): string | null => {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+};
 
-export function getAccessToken() {
-  return accessToken;
-}
+export const setAccessToken = (token: string | null) => {
+  if (token) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
+};
+
+export const removeAccessToken = () => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+};

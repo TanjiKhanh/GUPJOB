@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Res, HttpCode, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, HttpCode, UseGuards, Get, Param, NotFoundException } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { Request, Response } from 'express';
 import { LoginDto } from '../dto/login.dto';
@@ -71,5 +71,20 @@ export class AuthController {
     // clear cookie
     res.clearCookie(REFRESH_COOKIE, { path: '/' });
     return;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const user = await this.authService.findUserById(Number(id));
+    
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // 🛡️ Security: Remove password before sending
+    const { password, ...result } = user;
+    return result;
   }
 }
