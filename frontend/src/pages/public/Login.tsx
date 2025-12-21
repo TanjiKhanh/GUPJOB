@@ -1,114 +1,140 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import '../../styles/auth.css';
-import { useAuth } from '../../auth/AuthContext'; // Ensure this points to Context, not Provider
+import { Link, useNavigate } from 'react-router-dom';
+import '../../styles/auth.css'; 
+import { useAuth } from '../../auth/AuthContext';
 
-export default function LoginPage() {
+// Import logo
+import logo from '../../assets/images/logo-gupjob-primary.png';
+
+export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  // State manage form
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  
+  // State manage show/hide password 
+  const [showPassword, setShowPassword] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  // Handle input changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+    if (error) setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setError(null);
-    setLoading(true);
-
-    console.group('🔐 Login Debugger');
-    console.log('1. Submitting form with:', email);
 
     try {
-      // Await the login. If AuthProvider doesn't return 'user', this will be undefined.
-      const user = await login(email.trim(), password) as any;
-
-      // console.log('2. Login function finished.');
-      // console.log('3. User object received:', user);
-
-      // Check Intended Destination (e.g., user tried to visit /profile before logging in)
-      const intended = (location.state as any)?.from?.pathname;
-      // console.log('4. Intended destination (from state):', intended);
-
-      if (intended) {
-        // console.log('🚀 Redirecting to intended:', intended);
-        navigate(intended, { replace: true });
-        return;
+      if (!formData.email || !formData.password) {
+        throw new Error("Please enter your full email and password.");
       }
 
-      // Role-Based Redirect
-      // WARNING: If 'user' is undefined, this check fails and goes to 'else'
+      console.log("Attempting login with:", formData.email);
+      
+      // Call the actual login function from AuthContext
+      const user = await login(formData.email, formData.password);
+      
+      console.log("Login successful, user:", user);
+      
+      // Redirect based on role
       if (user?.role === 'ADMIN') {
-        console.log('👑 User is ADMIN -> Going to /admin');
-        navigate('/admin', { replace: true }); // Ensure this matches your route path
+        navigate('/admin', { replace: true });
       } else {
-        console.log('👤 User is STUDENT/MENTOR -> Going to /dashboard');
         navigate('/dashboard', { replace: true });
       }
-
+      
     } catch (err: any) {
-      console.error('❌ Login Error:', err);
-      const msg = err?.response?.data?.message || err.message || 'Login failed';
-      setError(msg);
+      console.error("Login error:", err);
+      setError(err.response?.data?.message || err.message || "Login failed. Please try again.");
     } finally {
-      setLoading(false);
-      console.groupEnd();
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h2 className="auth-title">Sign In</h2>
-        <p className="auth-sub">Welcome back! Please enter your details.</p>
+        <Link to="/">
+          <img src={logo} alt="GUPJOB Logo" className="auth-logo" />
+        </Link>
+        <h1 className="auth-title">Welcome back!</h1>
+        <p className="auth-sub">Log in to continue your career journey.</p>
+
+        {error && (
+          <div className="auth-error">
+            <span>⚠️ {error}</span>
+          </div>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          {/* Email Input */}
+          
           <label>
-            Email Address
-            <input
-              name="email"
-              type="email"
-              placeholder="admin@example.com"
+            Email
+            <input 
+              type="email" 
+              name="email" 
+              placeholder="name@company.com" 
+              value={formData.email}
+              onChange={handleChange}
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              autoComplete="email"
             />
           </label>
 
-          {/* Password Input */}
           <label>
             Password
-            <input
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              autoComplete="current-password"
-            />
+            <div className="password-input-wrapper">
+              <input 
+                /* Logic đổi type giữa text và password */
+                type={showPassword ? "text" : "password"} 
+                name="password" 
+                placeholder="••••••••" 
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              
+              {/* Nút bấm toggle icon */}
+              <span
+                className="password-toggle-icon"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🔓" : "🔒"} 
+              </span>
+            </div>
           </label>
+          {/* -------------------------------------- */}
 
           <div className="auth-row">
-            <Link className="link-muted" to="/forgot">Forgot Password?</Link>
+            <Link to="/forgot-password" className="link-muted">
+              Forgot password?
+            </Link>
           </div>
 
-          {error && <div className="auth-error" role="alert">{error}</div>}
-
-          <button className="btn btn--primary" type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
+          <button 
+            type="submit" 
+            className="btn btn--primary"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Processing...' : 'Login'}
           </button>
-
-          <p className="auth-footer">
-            Don't have an account? <Link to="/register">Sign Up</Link>
-          </p>
         </form>
+
+        <div className="auth-footer">
+          Don't have an account? <Link to="/register">Register now</Link>
+        </div>
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ declare global {
 export class AuthMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     // 2. Skip Auth for public routes (Login/Register)
-    const publicRoutes = ['/auth/login', '/auth/register' ,'/auth/refresh-token'];
+    const publicRoutes = ['/auth/login', '/auth/register' ,'/auth/refresh-token', '/auth/reset-password', '/auth/forgot-password'];
     if (publicRoutes.some(route => req.originalUrl.startsWith(route))) {
       return next();
     }

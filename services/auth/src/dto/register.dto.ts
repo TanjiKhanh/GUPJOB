@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsIn, IsInt } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsIn, IsInt, IsArray } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail({}, {message: 'Invalid email format'})
@@ -21,4 +21,22 @@ export class RegisterDto {
   @IsOptional()
   @IsString({message: 'Job Priority must be a string'})
   jobPriority?: string;
+
+  // --- Profile / Onboarding Fields (Step 3, 4, 5) ---
+  // Cần thêm các trường này để Backend không bỏ qua dữ liệu từ Frontend
+  @IsOptional()
+  @IsString()
+  currentSituation?: string;
+
+  @IsOptional()
+  @IsArray()
+  careerGoals?: string[];
+
+  @IsOptional()
+  @IsArray()
+  interests?: string[];
+
+  @IsOptional()
+  @IsString()
+  primaryGoalNextYear?: string;
 }

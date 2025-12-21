@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService  } from '../prisma/prisma.service'
-import { Prisma, User } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma, User, RefreshToken } from '@prisma/client';
 
 @Injectable()
 export class UsersRepository {
-  
   private readonly logger = new Logger(UsersRepository.name);
+  
   constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string): Promise<User | null> {
@@ -17,22 +17,15 @@ export class UsersRepository {
   }
 
   async create(data: Prisma.UserCreateInput): Promise<User> {
+    // Directly transmit 'data' so Prisma can automatically map the fields (including profile, role, etc.).
+    // No need to destructure manually here.
     return this.prisma.user.create({
-      data: {
-        email: data.email,
-        password: data.password,
-        name: data.name,
-        departmentId: data.departmentId,
-        jobPriority: data.jobPriority,
-        role: data.role as any,
-      },
-    });
+      data: data
+    })
   }
-  
+
   /**
    * Store a hashed refresh token in the DB.
-   * - tokenHash: hashed form of the refresh token (bcrypt or sha256)
-   * - expires: Date when the refresh token will expire
    */
   async storeRefreshToken(
     userId: number,
@@ -58,12 +51,13 @@ export class UsersRepository {
   }
 
   /**
-   * Find recent, non-revoked refresh tokens for a user.
-   * Useful when validating an incoming plain refresh token (compare hashes).
+   * Find recent, non-revoked refresh tokens.
+   * Supports filtering by userId to optimize performance.
    */
-  async findValidRefreshTokensForUser() : Promise<Array<{ id: string; tokenHash: string; expiresAt: Date }>> {
+  async findValidRefreshTokensForUser(userId?: number): Promise<Array<RefreshToken>> {
     return this.prisma.refreshToken.findMany({
       where: {
+        userId, // Lọc theo userId nếu có
         revoked: false,
         expiresAt: { gt: new Date() },
       },

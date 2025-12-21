@@ -1,0 +1,389 @@
+/* src/pages/public/Register.css */
+
+/* Container chính của form đăng ký */
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 500px; /* Mặc định nhỏ gọn cho Step 1 */
+  background: #fff;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transition: max-width 0.3s ease; /* Hiệu ứng khi card to ra ở các bước sau */
+}
+
+/* Card to hơn cho các bước chọn Role/Interest */
+.register-card.wide {
+  max-width: 650px;
+}
+
+/* --- STEP INDICATOR (Thanh tiến trình) --- */
+.step-header {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+.step-count {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: #2563eb;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- STEP 1: SOCIAL & FORM --- */
+.social-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-social:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+.divider-or {
+  display: flex;
+  align-items: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 1.5rem 0;
+}
+.divider-or::before, .divider-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+.divider-or span { padding: 0 1rem; }
+
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+.reg-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+  gap: 0.5rem;
+}
+.reg-input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+}
+.reg-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* --- STEP 2 & 3: SELECTION CARDS --- */
+.grid-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.grid-cards.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.card-select {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+.card-select:hover { border-color: #2563eb; }
+.card-select.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+/* Style cho Step 3 (Icon to ở giữa) */
+.card-select.centered {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.card-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+.card-select.active .card-icon-box {
+  background: #2563eb;
+  color: #fff;
+}
+.card-select.centered .card-icon-box {
+  background: transparent;
+  font-size: 2rem;
+}
+
+.card-info h3 { margin: 0 0 0.25rem; font-size: 1rem; color: #0f172a; }
+.card-info p { margin: 0; font-size: 0.85rem; color: #64748b; }
+
+/* --- STEP 4 & 5: CHECKBOX ITEMS & TAGS --- */
+.check-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #fff;
+  transition: all 0.2s;
+  margin-bottom: 0.75rem;
+}
+.check-item:hover { border-color: #94a3b8; }
+.check-item.active {
+  border-color: #2563eb;
+  background: #f0f9ff;
+}
+
+.check-box-visual {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px; /* Tròn cho radio thì border-radius: 50% */
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #fff;
+}
+.check-item.active .check-box-visual {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.tag-pill {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+  color: #334155;
+  cursor: pointer;
+}
+.tag-pill.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.step-centered-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.step-centered-header h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+.step-centered-header p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.section-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+  display: block;
+  text-align: left;
+}
+.section-sub-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+  display: block;
+  text-align: left;
+}
+
+/* Interest Cards (Grid 2 cột - Step 5) */
+.interest-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.interest-card:hover { border-color: #cbd5e1; }
+.interest-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
+  font-weight: 600;
+  color: #2563eb;
+}
+/* Icon trong Interest Card */
+.interest-icon {
+  font-size: 1.2rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
+.interest-card.active .interest-icon { color: #2563eb; }
+
+/* Goal Cards (List dọc - Step 5) */
+.goal-card {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: #334155;
+}
+.goal-card:hover { border-color: #cbd5e1; }
+.goal-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  font-weight: 600;
+  color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+/* --- FOOTER & BUTTONS --- */
+.action-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2.5rem;
+  padding: 1.5rem 2rem;
+  margin-left: -2.5rem;
+  margin-right: -2.5rem;
+  margin-bottom: -2.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+  border-radius: 0 0 16px 16px;
+  gap: 1rem;
+}
+
+.btn-primary-foot {
+  background: #2563eb;
+  color: #fff;
+  padding: 0.625rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.95rem;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.btn-primary-foot:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-primary-foot:hover:not(:disabled) { 
+  background: #1d4ed8;
+}
+
+.btn-ghost {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.btn-ghost:hover { 
+  color: #334155;
+}
+
+.error-msg {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}

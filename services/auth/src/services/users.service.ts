@@ -32,8 +32,8 @@ export class UsersService {
     return this.usersRepo.storeRefreshToken(userId, tokenHash, expires, userAgent, ip);
   }
 
-  async findValidRefreshTokensForUser(): Promise<Array<{ id: string; tokenHash: string; expiresAt: Date }>> {
-    return this.usersRepo.findValidRefreshTokensForUser();
+  async findValidRefreshTokensForUser(userId: number): Promise<Array<{ id: string; tokenHash: string; expiresAt: Date; userId: number }>> {
+    return this.usersRepo.findValidRefreshTokensForUser(userId);
   }
 
   // Revoke a single refresh token by id

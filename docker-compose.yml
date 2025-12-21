@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # --- 1. API GATEWAY ---
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: gupjob_api_gateway
+    ports:
+      - "8000:8080"  # Máy thật gọi 8000 -> vào container 8080
+    environment:
+      - PORT=8080
+      - NODE_ENV=development
+      - AUTH_SERVICE_URL=http://auth-service:3000
+      - ADMIN_SERVICE_URL=http://admin-service:4100
+      - USER_SERVICE_URL=http://user-service:4000
+      - JWT_SECRET=supersecret_dev_key
+    depends_on:
+      - auth-service
+    networks:
+      - gupjob-network
+
+  # --- 2. AUTH SERVICE ---
+  auth-service:
+    build: ./services/auth
+    container_name: gupjob_auth_service
+    ports:
+      - "3001:3000" # Map cổng 3001 máy thật để test trực tiếp nếu cần
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://gupjob:gupjob_pass@postgres:5432/gupjob_dev?schema=public
+      - JWT_SECRET=supersecret_dev_key
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USER=hoangkhanh27122005@gmail.com
+      - MAIL_PASS=qaaywkfhalucdepi
+      - MAIL_FROM=GupJob <hoangkhanh27122005@gmail.com>
+    depends_on:
+      - postgres
+    networks:
+      - gupjob-network
+
+  # --- 3. DATABASE (PostgreSQL) ---
+  postgres:
+    image: postgres:15
+    container_name: gupjob_postgres
+    environment:
+      POSTGRES_USER: gupjob
+      POSTGRES_PASSWORD: gupjob_pass
+      POSTGRES_DB: gupjob_dev
+    ports:
+      - "5432:5432" # Để bạn chạy npx prisma migrate từ máy thật
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gupjob-network
+
+networks:
+  gupjob-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
