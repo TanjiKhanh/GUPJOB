@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Req, Res, HttpCode, UseGuards, Get, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, HttpCode, UseGuards, Get, Param, NotFoundException, HttpStatus } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { Request, Response } from 'express';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
-import { JwtAuthGuard } from '../guards/jwt.guard'; // optional: protect logout route
+import { JwtAuthGuard } from '../guards/jwt.guard';
+import { ForgotPasswordDto, ResetPasswordDto } from '../dto/forgot-password.dto';
 
 const REFRESH_COOKIE = 'refresh_token';
 const REFRESH_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
@@ -12,43 +13,63 @@ const REFRESH_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  // 1. REGISTER
   @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response, @Req() req: Request) {
-    const user = await this.authService.register(dto);
-    // Optionally auto-login after register — omitted here
-    
-    return user;
+  async register(
+    @Body() dto: RegisterDto, 
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authService.register(dto);
+    return result;
   }
 
-  @HttpCode(200)
+  // 2. LOGIN (Set Cookie)
+  @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response, @Req() req: Request) {
+  async login(
+    @Body() dto: LoginDto, 
+    @Res({ passthrough: true }) res: Response, 
+    @Req() req: Request
+  ) {
     const userAgent = req.get('user-agent') || '';
-    const ip = req.ip;
+    // Get IP (Nginx/Cloudflare)
+    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    
     const result = await this.authService.login(dto, userAgent, ip);
 
-    // set refresh cookie; HttpOnly so JS can't read it
+    // Save Refresh Token into HTTP-Only Cookie 
     res.cookie(REFRESH_COOKIE, result.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: 'lax', 
       path: '/',
       maxAge: REFRESH_MAX_AGE,
     });
 
-    // don't return refresh token in body when using cookie; but include access_token and user
-    return { access_token: result.access_token, user: result.user };
+    // Return Access Token & User Info
+    return { 
+      access_token: result.access_token, 
+      user: result.user 
+    };
   }
 
-  @HttpCode(200)
+  // 3. REFRESH (Read Cookie)
+  @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async refresh(
+    @Req() req: Request, 
+    @Res({ passthrough: true }) res: Response
+  ) {
+    // Get Refresh Token from Cookie
     const token = req.cookies?.[REFRESH_COOKIE];
+    
     const userAgent = req.get('user-agent') || '';
-    const ip = req.ip;
+    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    
+    // Call Service to Refresh
     const result = await this.authService.refreshToken(token, userAgent, ip);
 
-    // replace refresh cookie (rotated)
+    // Set New Refresh Token in Cookie
     res.cookie(REFRESH_COOKIE, result.refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -57,24 +78,46 @@ export class AuthController {
       maxAge: REFRESH_MAX_AGE,
     });
 
-    return { access_token: result.access_token, user: result.user };
+    return { 
+      access_token: result.access_token, 
+      user: result.user 
+    };
   }
 
+  // 4. LOGOUT (Clear Cookie)
   @UseGuards(JwtAuthGuard)
-  @HttpCode(204)
+  @HttpCode(HttpStatus.NO_CONTENT) // 204 No Content
   @Post('logout')
-  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const userId = req.user?.sub;
+  async logout(
+    @Req() req: any, 
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const userId = req.user?.userId; // Get from JWT Payload
     if (userId) {
       await this.authService.logout(userId);
     }
-    // clear cookie
+
+    // Clear Cookie
     res.clearCookie(REFRESH_COOKIE, { path: '/' });
     return;
   }
 
+    @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  // 5. GET ME / FIND USER
   @UseGuards(JwtAuthGuard)
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const user = await this.authService.findUserById(Number(id));
@@ -83,7 +126,7 @@ export class AuthController {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // 🛡️ Security: Remove password before sending
+    // Security: Remove password before sending
     const { password, ...result } = user;
     return result;
   }

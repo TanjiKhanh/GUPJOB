@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/public/Landing';
 import Login from './pages/public/Login';
 import Register from './pages/public/Register';
+import ForgotPassword from './pages/public/ForgotPassword';
 
 // Pages - Learner
 import LearnerDashboard from './pages/learner/LearnerDashboard';
@@ -50,6 +51,11 @@ export default function App() {
             <Route 
               path="/register" 
               element={<PublicOnly><Register /></PublicOnly>} 
+            />
+            
+            <Route 
+              path="/forgot-password" 
+              element={<PublicOnly><ForgotPassword /></PublicOnly>} 
             />
 
             {/* =========================================

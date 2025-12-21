@@ -1,4 +1,4 @@
-import api from '../api/axios'; // Import your custom axios instance
+import api from '../services/api';
 
 export const adminService = {
   // Departments
@@ -14,7 +14,6 @@ export const adminService = {
     const res = await api.delete(`/admin/departments/${id}`);
     return res.data;
   },
-
   // Courses
   getCourses: async () => {
     const res = await api.get('/admin/courses');

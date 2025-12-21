@@ -1,33 +1,39 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
+import { MailerService } from '@nestjs-modules/mailer';
 
 // 👇 IMPORT YOUR DTOS
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
-import {DepartmentService} from '../../../admin-service/src/modules/department/department.service';
+import { ForgotPasswordDto, ResetPasswordDto } from '../dto/forgot-password.dto';
+import { PrismaService } from '../prisma/prisma.service';
+
 @Injectable()
 export class AuthService {
- 
+
   private readonly REFRESH_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private usersService: UsersService, 
     private jwtService: JwtService,
-    private readonly departmentService: DepartmentService, 
+    private mailerService: MailerService,
+    private prisma: PrismaService,
   ) {}
 
-  // ... (createAccessToken and createAndStoreRefreshToken methods remain the same) ...
+  // HELPER: CREATE TOKENS
   private createAccessToken(user: any) {
     const payload = { 
       sub: user.id, 
       email: user.email, 
       role: user.role,
-      deptId: user.departmentSlug,
-      job: user.jobPriority      
+      // deptId have to be added to payload for Role-Based Access Control
+      deptId: user.departmentId || null, 
+      
+      job: user.jobPriority || (user.profile as any)?.jobPriority 
     };
     return this.jwtService.sign(payload, { expiresIn: '15m' });
   }
@@ -37,46 +43,62 @@ export class AuthService {
     const hash = await bcrypt.hash(plain, 10);
     const expires = new Date(Date.now() + this.REFRESH_TTL_MS);
     await this.usersService.createRefreshToken(userId, hash, expires, userAgent, ip);
-    return { refreshToken: plain, expiresAt: expires };
+
+    return { refreshToken: `${userId}.${plain}`, expiresAt: expires };
   }
 
-  // =========================================
-  // 2. REGISTER (Updated to use RegisterDto)
-  // =========================================
-  async register(dto: RegisterDto) { // 👈 Usage here
+  // 2. REGISTER 
+  async register(dto: RegisterDto) { 
+    // 1. Check Email
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
-      throw new Error('User already exists');
+      throw new ConflictException('User already exists');
     }
 
+    // 2. Hash Password
     const hashed = await bcrypt.hash(dto.password, 10);
 
-    const department = await this.departmentService.findOne(dto.departmentSlug); // Ensure department exists
+    // 3. Map Role
+    let dbRole = 'STUDENT';
+    if (dto.role === 'MENTOR') dbRole = 'MENTOR';
+    if (dto.role === 'COMPANY') dbRole = 'COMPANY';
+    if (dto.role === 'ADMIN') dbRole = 'ADMIN';
 
-    if (!department) {
-      throw new Error('Department not found');
-    }
-    
+    // 4. Chuẩn bị Profile Data (Onboarding)
+    const profileData = {
+      currentSituation: dto.currentSituation,
+      careerGoals: dto.careerGoals,
+      interests: dto.interests,
+      primaryGoalNextYear: dto.primaryGoalNextYear,
+      departmentSlug: dto.departmentSlug,
+      registeredAt: new Date().toISOString(),
+    };
 
-
+    // 5. Create User
     const created = await this.usersService.createUser({
       email: dto.email,
       password: hashed,
       name: dto.name,
-      role: dto.role,
-      // DTO ensures these fields exist now:
-      departmentId: department.id, 
-      jobPriority: dto.jobPriority    
+      role: dbRole as any,
+      departmentId: null,
+      jobPriority: dto.jobPriority || null,
+      // Save JSON profile into DB
+      profile: profileData,
     } as any);
 
+    // 6. Return Safe User Data (without password)
     const { password, ...safe } = (created as any);
-    return safe;
+
+    return {
+      ...safe,
+      ...profileData, 
+    };
   }
 
   // =========================================
-  // 3. LOGIN (Updated to use LoginDto)
+  // 3. LOGIN
   // =========================================
-  async login(dto: LoginDto, userAgent?: string, ip?: string) { // 👈 Usage here
+  async login(dto: LoginDto, userAgent?: string, ip?: string) { 
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
     
@@ -86,13 +108,15 @@ export class AuthService {
     const accessToken = this.createAccessToken(user);
     const { refreshToken, expiresAt } = await this.createAndStoreRefreshToken(user.id, userAgent, ip);
 
+    // Safe user object to return
     const safe = { 
       id: user.id, 
       email: user.email, 
       name: user.name, 
       role: user.role,
       deptId: user.departmentId,
-      job: user.jobPriority 
+      job: user.jobPriority,
+      profile: user.profile 
     };
 
     return { 
@@ -103,42 +127,130 @@ export class AuthService {
     };
   }
 
-  // ... (refreshToken and logout methods remain the same) ...
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (!user) throw new NotFoundException('Email không tồn tại trong hệ thống.');
+
+    // Create Token 
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save to DB
+    await this.prisma.user.update({
+      where: { email: dto.email },
+      data: {
+        resetPasswordToken: token,
+        resetPasswordExpires: new Date(Date.now() + 15 * 60 * 1000), // Expire 15p
+      },
+    });
+
+    // Sent Mail to Google
+    await this.mailerService.sendMail({
+      to: dto.email,
+      subject: '[GupJob] Reset Your Password',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px;">
+          <h2 style="color: #05c34e;">Password Reset Request</h2>
+          <p>Hi there,</p>
+          <p>We received a request to reset your password. Use the code below to proceed:</p>
+          <div style="background-color: #f7fafc; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #2d3748;">
+            ${token}
+          </div>
+          <p>This code will expire in 15 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #a0aec0;">Team GupJob</p>
+        </div>
+      `,
+    });
+
+    return { message: 'The verification code has been sent to your email.' };
+  }
+  
+async resetPassword(dto: ResetPasswordDto) {
+    // Find user by token and check expiry
+    const user = await this.prisma.user.findFirst({
+      where: {
+        resetPasswordToken: dto.token,
+        resetPasswordExpires: { gt: new Date() }, // Token not expired
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('The verification code is invalid or has expired.');
+    }
+
+    // 2. Hash new password
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    // 3. Update password and clear reset token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
+    });
+
+    return { success: true, message: 'Password has been updated successfully.' };
+  }
+
   async refreshToken(plainToken: string, userAgent?: string, ip?: string) {
     if (!plainToken) throw new UnauthorizedException('Missing refresh token');
-    const tokens = await this.usersService.findValidRefreshTokensForUser();
+    
+    // Decode token get userId: "userId.token"
+    const [userIdStr, tokenPart] = plainToken.split('.');
+    if (!userIdStr || !tokenPart) {
+      throw new UnauthorizedException('Invalid refresh token format');
+    }
+    
+    const userId = parseInt(userIdStr, 10);
+    if (isNaN(userId)) {
+      throw new UnauthorizedException('Invalid refresh token format');
+    }
+    
+    const tokens = await this.usersService.findValidRefreshTokensForUser(userId);
+    
     let found = null;
     for (const t of tokens) {
-      const ok = await bcrypt.compare(plainToken, t.tokenHash);
+      const ok = await bcrypt.compare(tokenPart, t.tokenHash);
       if (ok) { found = t; break; }
     }
     if (!found) throw new UnauthorizedException('Invalid refresh token');
 
-    const user = await this.usersService.findById((found as any).userId);
+    const user = await this.usersService.findById(userId);
     if (!user) throw new UnauthorizedException('Invalid token user');
 
+    // Revoke old token 
     await this.usersService.revokeRefreshToken(found.id);
 
+    // Create new token
     const { refreshToken: newPlain, expiresAt } = await this.createAndStoreRefreshToken(user.id, userAgent, ip);
     const accessToken = this.createAccessToken(user);
 
+    // Update object user and return (Thêm profile)
     const safe = { 
       id: user.id, 
       email: user.email, 
       name: user.name, 
       role: user.role,
       deptId: user.departmentId,
-      job: user.jobPriority 
+      job: user.jobPriority,
+      profile: user.profile
     };
 
-    return { access_token: accessToken, refresh_token: newPlain, refresh_expires_at: expiresAt, user: safe };
+    return { 
+        access_token: accessToken, 
+        refresh_token: newPlain, 
+        refresh_expires_at: expiresAt, 
+        user: safe 
+    };
   }
 
   async logout(userId: number) {
     await this.usersService.revokeAllForUser(userId);
     return { ok: true };
   }
-
 
   async findUserById(id: number) {
     return this.usersService.findById(id);

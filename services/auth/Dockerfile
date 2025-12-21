@@ -1,21 +1,20 @@
-FROM node:18-alpine AS deps
+FROM node:18-alpine
+
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm ci --production=false
 
-# Copy source and build
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# --- THÊM DÒNG NÀY ---
+# Cài đặt OpenSSL và thư viện tương thích cho Alpine
+RUN apk add --no-cache openssl libc6-compat
+
+RUN npm install
+
 COPY . .
-# Generate Prisma client and build
-RUN npm run start:dev
 
-FROM node:18-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+# Generate Prisma Client (Lệnh này sẽ tự nhận diện OpenSSL vừa cài)
+RUN npx prisma generate
+
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+
+CMD ["npm", "run", "start:dev"]

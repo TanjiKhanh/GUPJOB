@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../../components/layouts/Footer';
-import '../../styles/styles.css';
+import '../../styles/Landing.css';
 
 // --- Assets Imports ---
 import logo from '../../assets/images/logo-gupjob-primary.png';
-import hero from '../../assets/images/img-landing-hero.png';
+import hero from '../../assets/images/Course app-amico.png';
 
-// Feature Icons (ensure these exist in frontend/src/assets/images)
+// Icons
 import iconRoadmaps from '../../assets/images/icon-interactive-roadmaps.png';
 import iconSkills from '../../assets/images/icon-verified-skills.png';
 import iconMentorship from '../../assets/images/icon-expert-mentorship.png';
@@ -16,106 +16,131 @@ import iconProjects from '../../assets/images/icon-real-projects.png';
 import iconCohort from '../../assets/images/icon-cohort-tracking.png';
 
 export default function Landing() {
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div>
-      <header className="site-header container">
-        <div className="brand">
-          <Link to="/"><img src={logo} alt="GUPJOB" className="brand-logo" /></Link>
+    <div className="landing-page">
+      {/* --- Header --- */}
+      <header className="site-header">
+        <div className="container header-inner">
+          <div className="brand">
+            <Link to="/">
+              <img src={logo} alt="GUPJOB" className="brand-logo" />
+            </Link>
+          </div>
+          <nav className="site-nav">
+            <button onClick={() => scrollToSection('features')} className="nav-link">
+              Features
+            </button>
+            <button onClick={() => scrollToSection('how-it-works')} className="nav-link">
+              How it Works
+            </button>
+            
+            <Link to="/companies" className="nav-link">For Companies</Link>
+            <Link to="/login" className="btn btn--ghost small">Sign in</Link>
+          </nav>
         </div>
-        <nav className="site-nav">
-          <Link to="/features">Features</Link>
-          <Link to="/how-it-works">How it Works</Link>
-          <Link to="/companies">For Companies</Link>
-          <Link to="/login" className="btn btn--ghost">Sign in</Link>
-        </nav>
       </header>
 
       <main>
-        {/* Hero Section */}
+        {/* --- Hero Section --- */}
         <section className="hero container">
-          <div className="hero-left">
-            <h1>Bridge the gap between learning and hiring</h1>
-            <p className="lead">
+          <div className="hero-content">
+            <h1 className="hero-title">Bridge the gap between learning and hiring</h1>
+            <p className="hero-desc">
               Master real-world skills through structured learning paths, get mentored by industry experts,
               and land opportunities with leading companies.
             </p>
-            <div className="hero-cta">
+            
+            <div className="hero-actions">
               <Link to="/register" className="btn btn--primary">Start Learning (Free)</Link>
               <Link to="/companies" className="btn btn--ghost">Find Top Talent</Link>
             </div>
 
-            <ul className="kpis">
-              <li><strong>50K+</strong><span> Learners</span></li>
-              <li><strong>500+</strong><span> Verified Skills</span></li>
-              <li><strong>200+</strong><span> Companies</span></li>
-            </ul>
+            <div className="hero-stats">
+              <div className="stat-item"><strong>50K+</strong><span>Learners</span></div>
+              <div className="stat-item"><strong>500+</strong><span>Verified Skills</span></div>
+              <div className="stat-item"><strong>200+</strong><span>Companies</span></div>
+            </div>
           </div>
 
-          <div className="hero-right">
-            <img src={hero} alt="GUPJOB Platform Preview" className="hero-image" />
+          <div className="hero-image-wrapper">
+            <img src={hero} alt="Platform Preview" className="hero-img" />
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="container features">
-          <h2 className="section-title">Why Choose GUPJOB?</h2>
+        {/* --- Features Section --- */}
+        <section id="features" className="features-section container">
+          <div className="section-header">
+            <h2>Why Choose SkillBridge?</h2>
+          </div>
 
           <div className="features-grid">
-            <article className="feature-card">
-              <img src={iconRoadmaps} alt="Interactive Roadmaps" className="feature-icon" />
-              <h3>Interactive Roadmaps</h3>
-              <p>Follow structured learning paths with visual DAG representation. See prerequisites, track progress, and unlock new skills.</p>
-            </article>
-
-            <article className="feature-card">
-              <img src={iconSkills} alt="Verified Skills" className="feature-icon" />
-              <h3>Verified Skills</h3>
-              <p>Submit real projects for verification. Get reviewed by industry mentors and earn blockchain-backed skill badges.</p>
-            </article>
-
-            <article className="feature-card">
-              <img src={iconMentorship} alt="Expert Mentorship" className="feature-icon" />
-              <h3>Expert Mentorship</h3>
-              <p>Connect with engineers from top companies. Book 1-on-1 sessions, get code reviews, and receive career guidance.</p>
-            </article>
-
-            <article className="feature-card">
-              <img src={iconHiring} alt="Data Driven Hiring" className="feature-icon" />
-              <h3>Data-Driven Hiring</h3>
-              <p>Companies find talent based on verified skills, not keywords. See actual project work and roadmap completion.</p>
-            </article>
-
-            <article className="feature-card">
-              <img src={iconProjects} alt="Real Projects" className="feature-icon" />
-              <h3>Real Projects</h3>
-              <p>Learn by building. Every skill requires a real project submission, ensuring practical, hands-on experience.</p>
-            </article>
-
-            <article className="feature-card">
-              <img src={iconCohort} alt="Cohort Tracking" className="feature-icon" />
-              <h3>Cohort Tracking</h3>
-              <p>Companies can track internship cohorts with real-time progress matrices. See who’s excelling and who needs support.</p>
-            </article>
+            <FeatureCard 
+              icon={iconRoadmaps} 
+              title="Interactive Roadmaps" 
+              desc="Follow structured learning paths with visual DAG representation. See prerequisites, track progress, and unlock new skills." 
+            />
+            <FeatureCard 
+              icon={iconSkills} 
+              title="Verified Skills" 
+              desc="Submit real projects for verification. Get reviewed by industry mentors and earn blockchain-backed skill badges." 
+            />
+            <FeatureCard 
+              icon={iconMentorship} 
+              title="Expert Mentorship" 
+              desc="Connect with engineers from top companies. Book 1-on-1 sessions, get code reviews, and receive career guidance." 
+            />
+            <FeatureCard 
+              icon={iconHiring} 
+              title="Data-Driven Hiring" 
+              desc="Companies find talent based on verified skills, not keywords. See actual project work and roadmap completion." 
+            />
+            <FeatureCard 
+              icon={iconProjects} 
+              title="Real Projects" 
+              desc="Learn by building. Every skill requires a real project submission, ensuring practical, hands-on experience." 
+            />
+            <FeatureCard 
+              icon={iconCohort} 
+              title="Cohort Tracking" 
+              desc="Companies can track internship cohorts with real-time progress matrices. See who’s excelling and who needs support." 
+            />
           </div>
         </section>
 
-        {/* CTA band */}
+        {/* --- CTA Band --- */}
         <section className="cta-band">
-          <div className="container cta-inner">
-            <div>
-              <h3>Ready to bridge the gap?</h3>
-              <p>Join thousands of learners transforming their careers today.</p>
-            </div>
-            <div className="cta-actions">
+          <div className="container cta-content">
+            <h2>Ready to bridge the gap?</h2>
+            <p>Join thousands of learners transforming their careers today.</p>
+            <div className="cta-buttons">
               <Link to="/register" className="btn btn--white">Start Learning Now</Link>
-              <Link to="/contact" className="btn btn--ghost">Schedule a Demo</Link>
+              <Link to="/contact" className="btn btn--transparent">Schedule a Demo</Link>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Use the shared Footer component so footer style/behavior is consistent */}
+      {/* Footer Component */}
       <Footer />
     </div>
   );
 }
+
+// Sub-component cho Feature Card
+const FeatureCard = ({ icon, title, desc }: { icon: string, title: string, desc: string }) => (
+  <article className="feature-card">
+    <div className="icon-wrapper">
+      <img src={icon} alt={title} />
+    </div>
+    <h3>{title}</h3>
+    <p>{desc}</p>
+  </article>
+);

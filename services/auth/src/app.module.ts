@@ -1,37 +1,68 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport'; // <--- 1. Import this
+import { PassportModule } from '@nestjs/passport';
+import { MailerModule } from '@nestjs-modules/mailer';
 
-import { PrismaService } from './prisma/prisma.service';
+// Controllers & Services
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import { UsersService } from './services/users.service';
-import { UsersRepository } from './repositories/user.repository';
-import { JwtStrategy } from './strategies/jwt.strategy'; // <--- 2. Import your Strategy
-import { DepartmentModule } from '../../admin-service/src/modules/department/department.module';
-import {PrismaModule} from '../../admin-service/src/prisma/prisma.module'; 
-import { UsersController } from './controllers/user.controller';
+import { PrismaService } from './prisma/prisma.service';
+import { UsersRepository } from './repositories/user.repository'; 
+
+// Strategies
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    PassportModule, // <--- 3. Add PassportModule
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'supersecret_dev_key',
-      signOptions: { expiresIn: '1h' }, // '3600' might be interpreted as ms in some versions, '1h' is safer
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
-    DepartmentModule,
-    PrismaModule,
+    
+    // Register PassportModule with default strategy
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+
+    // Configure JWT Async (save to read .env)
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET') || 'supersecret_dev_key',
+        signOptions: { expiresIn: '15m' }, // Access token 
+      }),
+      inject: [ConfigService],
+    }),
+
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('MAIL_HOST'), // smtp.gmail.com
+          port: configService.get<number>('MAIL_PORT'), // 587
+          secure: false, // TLS
+          auth: {
+            user: configService.get<string>('MAIL_USER'),
+            pass: configService.get<string>('MAIL_PASS'),
+          },
+          tls: {
+            // Tránh lỗi từ chối kết nối trên môi trường local
+            rejectUnauthorized: false, 
+          },
+        },
+        defaults: {
+          from: configService.get<string>('MAIL_FROM'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
   ],
-  controllers: [AuthController, UsersController],
+  controllers: [AuthController],
   providers: [
-    PrismaService, 
     AuthService, 
     UsersService, 
     UsersRepository,
-    JwtStrategy, // <--- 4. CRITICAL: Add Strategy to Providers
+    PrismaService,
+    JwtStrategy, 
   ],
-  exports: [AuthService, UsersService],
 })
 export class AppModule {}

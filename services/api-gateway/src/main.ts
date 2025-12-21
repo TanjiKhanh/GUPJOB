@@ -20,7 +20,7 @@ async function bootstrap() {
   });
 
   // 2. Start the Gateway
-  const PORT = process.env.PORT || 8080;
+  const PORT = process.env.PORT || 3005;
   await app.listen(PORT);
 
   logger.log(`🚀 API Gateway running on: http://localhost:${PORT}`);

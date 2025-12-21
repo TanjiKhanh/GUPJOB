@@ -13,11 +13,9 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     const adminTarget = process.env.ADMIN_SERVICE_URL || 'http://localhost:4100';
     const userTarget = process.env.USER_SERVICE_URL || 'http://localhost:4000';
-    const authTarget = process.env.AUTH_SERVICE_URL || 'http://localhost:3000';
+    const authTarget = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
 
-    // ---------------------------------------------------------
     // 1. ADMIN ROUTES (The Secure Chain)
-    // ---------------------------------------------------------
     consumer
       .apply(
         // 1. Log the Request
@@ -32,28 +30,23 @@ export class AppModule implements NestModule {
         // 4. Proxy
         createServiceProxy(adminTarget, { '^/admin': '/admin' })
       )
-      .forRoutes({ path: 'admin/(.*)', method: RequestMethod.ALL });
+      .forRoutes('admin/*path');
 
 
-
-    // ---------------------------------------------------------
     // 2. USER ROUTES
-    // ---------------------------------------------------------
     consumer
       .apply(
         AuthMiddleware, 
         createServiceProxy(userTarget, { '^/roadmaps': '/roadmaps' })
       )
-      .forRoutes({ path: 'roadmaps/(.*)', method: RequestMethod.ALL });
+      .forRoutes('roadmaps/*path');
 
 
-    // ---------------------------------------------------------
     // 3. AUTH ROUTES (Public)
-    // ---------------------------------------------------------
     consumer
       .apply(
-        createServiceProxy(authTarget, { '^/auth': '/auth' })
+        createServiceProxy(authTarget, { '^/auth': '/auth' }) 
       )
-      .forRoutes({ path: 'auth/(.*)', method: RequestMethod.ALL });
+      .forRoutes('auth/*path', 'auth');
   }
 }
