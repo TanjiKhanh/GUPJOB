@@ -13,7 +13,7 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     const adminTarget = process.env.ADMIN_SERVICE_URL || 'http://localhost:4100';
     const userTarget = process.env.USER_SERVICE_URL || 'http://localhost:4000';
-    const authTarget = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+    const authTarget = process.env.AUTH_SERVICE_URL || 'http://localhost:3000';
 
     // 1. ADMIN ROUTES (The Secure Chain)
     consumer
@@ -48,5 +48,12 @@ export class AppModule implements NestModule {
         createServiceProxy(authTarget, { '^/auth': '/auth' }) 
       )
       .forRoutes('auth/*path', 'auth');
+
+    // 4. PUBLIC ROUTES (Public)
+    consumer
+      .apply(
+        createServiceProxy(adminTarget, { '^/public': '/public' }) 
+      )
+      .forRoutes('public/*path', 'public');
   }
 }

@@ -46,5 +46,8 @@ export class UsersService {
     return this.usersRepo.revokeAllForUser(userId);
   }
   
+  async findAll(): Promise<User[]> {
+    return this.usersRepo.findAll();
+  }
 
 }

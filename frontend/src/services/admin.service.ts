@@ -40,6 +40,8 @@ export interface Roadmap {
   edges: RoadmapEdgeInput[];
 }
 
+
+
 export const adminService = {
   // ==========================================
   // 📂 DEPARTMENTS
@@ -126,5 +128,6 @@ export const adminService = {
   deleteRoadmap: async (id: number) => {
     const data = await api.delete(`/admin/roadmaps/${id}`);
     return data as unknown as any;
-  }
+  },
+
 };

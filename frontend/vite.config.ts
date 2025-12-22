@@ -7,15 +7,16 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/auth': {
-        // 👇 SỬA LẠI: Backend đang chạy ngon ở 3001
-        target: 'http://127.0.0.1:3001', 
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
       },
+      // 👇 FIX THIS BLOCK
       '/admin': {
-        target: 'http://127.0.0.1:3001', // Sửa thành 3001
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+        // Bypass proxy if the request is for an HTML page (Browser Navigation)
         bypass: (req, res, options) => {
           if (req.headers.accept && req.headers.accept.includes('text/html')) {
             return req.url;
@@ -23,8 +24,13 @@ export default defineConfig({
         },
       },
       '/roadmaps': {
-        target: 'http://127.0.0.1:3001', // Sửa thành 3001
+        target: 'http://localhost:8080',
         changeOrigin: true,
+        secure: false,
+      },
+      '/public': {
+        target: 'http://localhost:8080',
+        changeOrigin: true, 
         secure: false,
       },
     },

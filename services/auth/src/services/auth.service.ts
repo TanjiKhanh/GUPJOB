@@ -11,6 +11,13 @@ import { LoginDto } from '../dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from '../dto/forgot-password.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
+// IMPORT ADMIN CLIENT  
+import { AdminClientService } from '../external/admin-client/admin-client.service';
+import { Role } from '@prisma/client';
+
+// IMPORT USER CLIENT
+import { UserClientService } from '../external/user-client/user-client.service';
+
 @Injectable()
 export class AuthService {
 
@@ -22,6 +29,8 @@ export class AuthService {
     private jwtService: JwtService,
     private mailerService: MailerService,
     private prisma: PrismaService,
+    private adminClientService: AdminClientService,
+    private userClientService: UserClientService,
   ) {}
 
   // HELPER: CREATE TOKENS
@@ -59,12 +68,12 @@ export class AuthService {
     const hashed = await bcrypt.hash(dto.password, 10);
 
     // 3. Map Role
-    let dbRole = 'STUDENT';
-    if (dto.role === 'MENTOR') dbRole = 'MENTOR';
-    if (dto.role === 'COMPANY') dbRole = 'COMPANY';
-    if (dto.role === 'ADMIN') dbRole = 'ADMIN';
+    let dbRole: Role = Role.STUDENT; // Default
+    if (dto.role === 'MENTOR') dbRole = Role.MENTOR;
+    if (dto.role === 'COMPANY') dbRole = Role.COMPANY;
+    if (dto.role === 'ADMIN') dbRole = Role.ADMIN;
 
-    // 4. Chuẩn bị Profile Data (Onboarding)
+    // 4. Prepare Profile Data
     const profileData = {
       currentSituation: dto.currentSituation,
       careerGoals: dto.careerGoals,
@@ -74,19 +83,34 @@ export class AuthService {
       registeredAt: new Date().toISOString(),
     };
 
-    // 5. Create User
+    //5 Find Department ID from Slug (if any)
+    const dept = await this.adminClientService.getDepartment(dto.departmentSlug);
+    if (!dept) {
+      throw new BadRequestException('Invalid department slug');
+    }
+    const deptId = dept ? dept.id : null;
+
+    // 6. Create User
     const created = await this.usersService.createUser({
       email: dto.email,
       password: hashed,
       name: dto.name,
-      role: dbRole as any,
-      departmentId: null,
+      role: dbRole,
+      departmentId: deptId,
       jobPriority: dto.jobPriority || null,
       // Save JSON profile into DB
       profile: profileData,
     } as any);
 
-    // 6. Return Safe User Data (without password)
+    // 7. Auto-Enroll User to Default Courses
+    try {
+      await this.userClientService.enrollUser(dto.jobPriority, this.createAccessToken(created));
+
+    } catch (error) {
+      this.logger.error(`Auto-enrollment failed for user ${dto.email}: ${error.message}`);
+    }
+
+    // 8. Return Safe User Data (without password)
     const { password, ...safe } = (created as any);
 
     return {
@@ -255,4 +279,5 @@ async resetPassword(dto: ResetPasswordDto) {
   async findUserById(id: number) {
     return this.usersService.findById(id);
   }
+
 }

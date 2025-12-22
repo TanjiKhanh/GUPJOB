@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import api from '../services/api';
+import { authService, RegisterPayload } from '../services/auth.service'; // Import service
 import { setAccessToken, getAccessToken } from './tokenStore';
-import { AuthContext, User } from './AuthContext'; 
+import { AuthContext, User } from './AuthContext';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -13,13 +13,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const token = getAccessToken();
         if (token) {
-          await refresh(); 
+          await refresh();
         }
       } catch (err) {
-        // If refresh fails (401), api.ts redirects to login automatically
-        // We just clear local state here to be safe
         console.log("Session init failed", err);
-        setAccessToken(null); 
+        setAccessToken(null);
         setUser(null);
       } finally {
         setLoading(false);
@@ -31,8 +29,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 2. Login Function
   const login = async (email: string, password: string) => {
-    // We cast 'as any' because api.ts interceptor returns raw data, not AxiosResponse
-    const payload = await api.post('/auth/login', { email, password }) as any;
+    // Use authService
+    const payload = await authService.login({ email, password }) as any;
 
     if (!payload?.access_token) {
       throw new Error('Login failed: No access token received.');
@@ -44,10 +42,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return payload.user;
   };
 
-  // 3. Refresh Function
+  // 3. Register Function (New)
+  const register = async (data: RegisterPayload) => {
+    // We just call the service. 
+    // Usually, registration doesn't auto-login in this specific flow (redirects to login),
+    // but if your backend returns a token on register, you can set it here like in login().
+    await authService.register(data);
+  };
+
+  // 4. Refresh Function
   const refresh = async () => {
-    // This call will fail if the HttpOnly cookie is missing/expired
-    const payload = await api.post('/auth/refresh', {}) as any;
+    const payload = await authService.refresh() as any;
 
     if (!payload?.access_token) {
       throw new Error('Refresh failed: No access token returned.');
@@ -60,22 +65,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 4. Logout Function
+  // 5. Logout Function
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
+      await authService.logout();
     } catch (err) {
       console.warn('Logout failed on server', err);
     } finally {
       setAccessToken(null);
       setUser(null);
-      window.location.href = '/login'; 
+      window.location.href = '/login';
     }
   };
 
   const value = {
     user,
     login,
+    register, // Expose register
     logout,
     refresh,
     accessToken: getAccessToken(),

@@ -130,4 +130,6 @@ export class AuthController {
     const { password, ...result } = user;
     return result;
   }
+
+  
 }

@@ -84,4 +84,8 @@ export class UsersRepository {
       data: { revoked: true },
     });
   }
+
+  async findAll(): Promise<User[]> {
+    return this.prisma.user.findMany();
+  }
 }

@@ -6,6 +6,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 
 // Controllers & Services
 import { AuthController } from './controllers/auth.controller';
+import { UsersController } from './controllers/user.controller';
 import { AuthService } from './services/auth.service';
 import { UsersService } from './services/users.service';
 import { PrismaService } from './prisma/prisma.service';
@@ -13,6 +14,8 @@ import { UsersRepository } from './repositories/user.repository';
 
 // Strategies
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AdminClientModule } from '../src/external/admin-client/admin-client.module'
+import { UserClientModule } from './external/user-client/user-client.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     
     // Register PassportModule with default strategy
     PassportModule.register({ defaultStrategy: 'jwt' }),
+
+    AdminClientModule,
+    UserClientModule,
 
     // Configure JWT Async (save to read .env)
     JwtModule.registerAsync({
@@ -56,7 +62,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController , UsersController ],
   providers: [
     AuthService, 
     UsersService, 

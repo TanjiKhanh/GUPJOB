@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../styles/auth.css'; 
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth , User } from '../../auth/AuthContext';
 
 // Import logo
 import logo from '../../assets/images/logo-gupjob-primary.png';
@@ -44,7 +44,7 @@ export default function Login() {
       console.log("Attempting login with:", formData.email);
       
       // Call the actual login function from AuthContext
-      const user = await login(formData.email, formData.password);
+      const user = await login(formData.email, formData.password) as any;
       
       console.log("Login successful, user:", user);
       

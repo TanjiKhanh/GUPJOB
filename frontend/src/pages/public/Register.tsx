@@ -1,42 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import '../../styles/Register.css'; // Import file CSS riêng vừa tạo
-
-// Lấy API URL từ biến môi trường
-const API = (import.meta as any).env?.VITE_API_URL || '';
+import { useAuth } from '../../auth/AuthContext'; // Import useAuth hook
+import '../../styles/Register.css';
 
 // Asset Import (Logo)
 import logo from '../../assets/images/logo-gupjob-primary.png';
 import gitHub from '../../assets/images/icon-github.png';
 import linkedIn from '../../assets/images/icon-linkedin.png';
 
+import { PublicCourse , publicService } from '../../services/public.service';
+
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { register } = useAuth(); // Get register function from context
   const [step, setStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   // State control form data
   const [formData, setFormData] = useState({
-    // Step 1: Basic Info
     email: '',
     fullName: '',
     password: '',
-    // Step 2: Role
     role: '', 
-    // Step 3: Situation
     currentSituation: '', 
-    // Step 4: Goals
     careerGoals: [] as string[],
-    // Step 5: Interests
     interests: [] as string[],
-    primaryGoalNextYear: ''
+    primaryGoalNextYear: '',
+    priorityJob: '',
+    selectedCourseId : null as number | null
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- HANDLERS ---
+  // --- LOAD RECOMMENDED COURSES BASED ON INTEREST ---
+  const [availableCourses, setAvailableCourses] = useState<PublicCourse[]>([]);
+  const [isCourseLoading, setIsCourseLoading] = useState(false);
+
+  useEffect(() => {
+    if (step === 6) {
+      const loadCourses = async () => {
+        setIsCourseLoading(true);
+        try {
+          const primaryInterest = formData.interests[0];
+          const deptSlug = getDepartmentSlug(primaryInterest);
+
+          // Use publicService to fetch JOB courses for the department
+          const courses = await publicService.getJobCourses(deptSlug);
+          
+          if (Array.isArray(courses)) {
+            setAvailableCourses(courses);
+          }
+        } catch (err) {
+          console.error("Error loading courses", err);
+        } finally {
+          setIsCourseLoading(false);
+        }
+      };
+      loadCourses();
+    }
+  }, [step, formData.interests]);
+
+  // --- HANDLERS (Keep existing handlers) ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError(null);
@@ -55,13 +81,36 @@ export default function RegisterPage() {
     });
   };
 
+
+  const handleCourseSelect = (course: PublicCourse) => {
+    setFormData(prev => {
+      if (prev.selectedCourseId === course.id) {
+        return { ...prev, selectedCourseId: null, priorityJob: '' };
+      }
+      return { 
+        ...prev, 
+        selectedCourseId: course.id, 
+        priorityJob: course.slug 
+      };
+    });
+  };
+
+// Helper to map UI Interest tags to Backend Department Slugs
+const getDepartmentSlug = (interest: string) => {
+  const map: Record<string, string> = {
+    'IT': 'it',
+    'Business - Marketing': 'business',
+    'Design': 'design',
+    'Other': 'general'
+  };
+  return map[interest] || 'general';
+};
+
   const nextStep = () => {
-    // Validate Step 1
     if (step === 1 && (!formData.email || !formData.fullName || !formData.password)) {
       setError("Please fill in all fields.");
       return;
     }
-    // Validate Step 2
     if (step === 2 && !formData.role) {
       setError("Please select a role.");
       return;
@@ -72,15 +121,16 @@ export default function RegisterPage() {
 
   const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
 
-  // --- API SUBMIT HANDLER ---
+
+
+
+  // --- SUBMIT HANDLER ---
   const handleSubmit = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log("Submitting Data:", formData);
-      
-      // Map role từ frontend values sang backend enum values
+      // Map role logic
       const roleMap: { [key: string]: string } = {
         'learner': 'STUDENT',
         'mentor': 'MENTOR',
@@ -90,42 +140,45 @@ export default function RegisterPage() {
       
       const backendRole = roleMap[formData.role.toLowerCase()] || formData.role.toUpperCase();
       
+      const departmentSlug = getDepartmentSlug(formData.interests[0]);
+      
       const payload = {
         email: formData.email,
         password: formData.password,
         name: formData.fullName,
         role: backendRole,  
-        jobPriority: formData.interests?.[0] || null, 
+        jobPriority: formData.priorityJob, 
         currentSituation: formData.currentSituation,
         careerGoals: formData.careerGoals,
         interests: formData.interests,
+        departmentSlug: departmentSlug,
         primaryGoalNextYear: formData.primaryGoalNextYear
       };
 
-      const res = await fetch(`${API}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      console.log("Submitting Payload:", payload); // 🔍 Debug Log
 
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || 'Registration failed');
-      }
+      // Call the context function instead of fetch
+      await register(payload);
 
-      // Thành công -> Chuyển sang Login
+      // Success -> Navigate
       navigate('/login');
       
     } catch (err: any) {
-      setError(err.message || 'Register error');
+      // API errors usually come as objects or strings depending on your api.ts interceptor
+      const errorMessage = err.response?.data?.message || err.message || 'Registration failed';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- RENDER FUNCTIONS ---
+  // ... (Rest of your Render Functions: renderStep1, renderStep2, etc. remain exactly the same) ...
+  
+  // NOTE: Paste your existing render functions (renderStep1 - renderStep5) and return statement here.
+  // The UI logic does not change, only the handleSubmit logic changed.
+  
+  // ... (Include renderStep1, renderStep2, renderStep3, renderStep4, renderStep5) ...
 
-  // STEP 1: Basic Info
   const renderStep1 = () => (
     <>
       <h2 style={{fontSize: '1.75rem', marginBottom: '0.5rem'}}>Create Account</h2>
@@ -182,7 +235,6 @@ export default function RegisterPage() {
     </>
   );
 
-  // STEP 2: Role
   const renderStep2 = () => (
     <>
       <h2 style={{fontSize: '1.5rem', marginBottom: '0.5rem'}}>How will you be joining us?</h2>
@@ -211,7 +263,6 @@ export default function RegisterPage() {
     </>
   );
 
-  // STEP 3: Situation
   const renderStep3 = () => (
     <>
       <h2 style={{fontSize: '1.5rem'}}>Current Situation?</h2>
@@ -235,7 +286,6 @@ export default function RegisterPage() {
     </>
   );
 
-  // STEP 4: Goals
   const renderStep4 = () => (
     <>
       <h2 style={{fontSize: '1.5rem'}}>Primary Career Goals?</h2>
@@ -262,7 +312,6 @@ export default function RegisterPage() {
     </>
   );
 
-  // STEP 5: Interests & Final Submit
   const renderStep5 = () => (
     <>
       <div className="step-centered-header">
@@ -270,17 +319,16 @@ export default function RegisterPage() {
         <p>This will help us personalize your learning journey.</p>
       </div>
 
-      {/* Section 1: Interests */}
       <div style={{ marginBottom: '2rem' }}>
         <label className="section-label">What areas are you most interested in?</label>
         <span className="section-sub-label">Select all that apply</span>
         
         <div className="grid-cards two-col">
           {[
-            { id: 'Business - Marketing', icon: '📢' }, // Icon cái loa
-            { id: 'IT', icon: '< >' },                  // Icon code
-            { id: 'Design', icon: '🎨' },               // Icon palette
-            { id: 'Other', icon: '•••' }                // Icon 3 chấm
+            { id: 'Business - Marketing', icon: '📢' }, 
+            { id: 'IT', icon: '< >' }, 
+            { id: 'Design', icon: '🎨' }, 
+            { id: 'Other', icon: '•••' } 
           ].map(item => (
             <div 
               key={item.id} 
@@ -294,10 +342,8 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Section 2: Primary Goal */}
       <div>
         <label className="section-label">What is your primary goal for the next year?</label>
-        {/* Khoảng cách nhỏ dưới label */}
         <div style={{ marginTop: '0.75rem' }}>
           {[
             'Obtain a certification',
@@ -321,16 +367,66 @@ export default function RegisterPage() {
     </>
   );
 
+  //Load all JOB course corresponding to selected department 
+  const renderStep6 = () => (
+    <>
+      <div className="step-centered-header">
+        <h2>Choose Your Focus</h2>
+        <p>Select a specific career path to enroll in.</p>
+      </div>
+
+      {isCourseLoading ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Loading...</div>
+      ) : availableCourses.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+          No courses found. You can skip this step.
+        </div>
+      ) : (
+        <div className="grid-cards">
+          {availableCourses.map(course => (
+            <div 
+              key={course.id} 
+              className={`course-select-card ${formData.selectedCourseId === course.id ? 'active' : ''}`}
+              onClick={() => handleCourseSelect(course)}
+              style={{
+                border: formData.selectedCourseId === course.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '1.2rem',
+                cursor: 'pointer',
+                backgroundColor: formData.selectedCourseId === course.id ? '#eff6ff' : 'white',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              {/* Only Title */}
+              <span style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>
+                {course.title}
+              </span>
+
+              {/* Selection Circle */}
+              <div style={{
+                width: '20px', height: '20px', borderRadius: '50%',
+                border: formData.selectedCourseId === course.id ? '5px solid #2563eb' : '2px solid #cbd5e1',
+                backgroundColor: 'white',
+                transition: 'all 0.2s'
+              }} />
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="register-container">
-      {/* Dynamic class 'wide' để card to ra khi vào các bước sau */}
       <div className={`register-card ${step > 1 ? 'wide' : ''}`}>
-        
         <div style={{textAlign:'center', marginBottom:'1rem'}}>
           <Link to="/"><img src={logo} alt="Logo" style={{height:'40px'}} /></Link>
         </div>
 
-        {/* Progress Bar (Step 2+) */}
+        {/* Progress Bar */}
         {step > 1 && (
           <div className="step-header">
             <span className="step-count">Step {step} of {totalSteps}</span>
@@ -340,30 +436,27 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Content Render */}
+        {/* Render Steps */}
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
         {step === 5 && renderStep5()}
+        {step === 6 && renderStep6()}
 
-        {/* Navigation Buttons (Step 2+) */}
+        {/* Footer */}
         {step > 1 && (
           <div className="action-footer">
             <button className="btn-ghost" onClick={prevStep}>Back</button>
             <button 
               className="btn-primary-foot" 
               onClick={step === totalSteps ? handleSubmit : nextStep}
-              disabled={isLoading}
+              disabled={isLoading || (step === 6 && isCourseLoading)}
             >
-              {isLoading 
-                ? 'Processing...' 
-                : (step === totalSteps ? 'Finish and go to Dashboard' : 'Continue')
-              }
+              {isLoading ? 'Processing...' : (step === totalSteps ? 'Finish and go to Dashboard' : 'Continue')}
             </button>
           </div>
         )}
-
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsIn, IsInt, IsArray } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsIn, IsInt, IsArray, IsNotEmpty } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail({}, {message: 'Invalid email format'})
@@ -14,11 +14,11 @@ export class RegisterDto {
   @IsIn(['STUDENT', 'MENTOR', 'COMPANY', 'ADMIN'] , {message: 'Role must be one of STUDENT, MENTOR, COMPANY, ADMIN'})
   role?: string;
 
-  @IsOptional()
+  @IsNotEmpty({message: 'Department Slug is required'})
   @IsString({message: 'Department Slug must be a string'})
   departmentSlug?: string;
 
-  @IsOptional()
+  @IsNotEmpty({message: 'Department Slug is required'})
   @IsString({message: 'Job Priority must be a string'})
   jobPriority?: string;
 

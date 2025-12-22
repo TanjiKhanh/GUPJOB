@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UsePipes, ValidationPipe, Query } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
+import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('admin/courses')
 export class CourseController {
@@ -32,4 +33,6 @@ export class CourseController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.courseService.remove(id);
   }
+
+  
 }

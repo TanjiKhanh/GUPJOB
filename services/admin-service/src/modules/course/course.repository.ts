@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma, Course } from '@prisma/client';
+import { Prisma, Course, CourseType } from '@prisma/client';
 
 @Injectable()
 export class CourseRepository {
@@ -47,5 +47,30 @@ export class CourseRepository {
     return this.prisma.course.delete({
       where: { id },
     });
+  }
+
+
+  async findCoursesByDepartmentIdAndType(departmentId: number, type: string): Promise<Course[]> {
+    if( type === 'JOB' ) {
+      return this.prisma.course.findMany({
+        where: {
+          department: {
+            id: departmentId,
+          },
+          type: CourseType.JOB,
+        },
+      });
+    }
+    if( type === 'BASIC' ) {
+      return this.prisma.course.findMany({
+        where: {
+          department: {
+            id: departmentId,
+          },
+          type: CourseType.BASIC,
+        },
+      });
+    }
+    return [];
   }
 }

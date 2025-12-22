@@ -155,4 +155,17 @@ export class CourseService {
     }
     return this.repository.remove(id);
   }
+
+
+
+  //Get courses by department slug and type
+  async getCourses(departmentSlug: string , type: string) {
+    // 1. Find department by slug
+    const department = await this.departmentService.findOne(departmentSlug);
+    if (!department) {
+      throw new NotFoundException(`Department with slug '${departmentSlug}' not found`);
+    }
+    // 2. Find courses with type 'JOB' under that department
+    return this.repository.findCoursesByDepartmentIdAndType(department.id, type);
+  }
 }

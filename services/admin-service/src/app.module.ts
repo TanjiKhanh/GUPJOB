@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module'; // Or from your libs path
 import { DepartmentModule } from './modules/department/department.module';
 import { CourseModule } from './modules/course/course.module';
 import {RoadmapModule} from './modules/roadmap/roadmap.module'
+import {PublicModule} from './modules/public/public.module'
 
 
 @Module({
@@ -24,6 +25,7 @@ import {RoadmapModule} from './modules/roadmap/roadmap.module'
     DepartmentModule,
     CourseModule,
     RoadmapModule,
+    PublicModule,
 
     // 4. Strategy
   ],
